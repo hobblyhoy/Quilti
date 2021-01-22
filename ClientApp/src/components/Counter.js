@@ -1,26 +1,43 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { fabric } from 'fabric';
 
 export function Counter() {
-   const [currentCount, setCurrentCount] = useState(0);
+   useEffect(() => {
+      const canvas = new fabric.Canvas('canvas', {
+         width: 500,
+         height: 500,
+         backgroundColor: 'grey',
+      });
 
-   let incrementCounter = () => {
-      setCurrentCount(currentCount => currentCount + 1);
-   };
+      let mousePressed = false;
+      canvas.freeDrawingBrush = new fabric.CircleBrush(canvas);
+      canvas.freeDrawingBrush.width = 12;
+      canvas.freeDrawingBrush.color = 'red';
+      canvas.renderAll();
+
+      canvas.on('mouse:move', () => {
+         if (mousePressed) {
+            canvas.isDrawingMode = true;
+            canvas.renderAll();
+         }
+      });
+
+      canvas.on('mouse:down', event => {
+         mousePressed = true;
+         //canvas.setCursor('grab');
+         canvas.renderAll();
+      });
+
+      canvas.on('mouse:up', event => {
+         mousePressed = false;
+         //canvas.setCursor('default');
+         canvas.renderAll();
+      });
+   }, []);
 
    return (
       <div>
-         <h1>Counter</h1>
-
-         <p>This is a simple example of a React component.</p>
-
-         <p aria-live="polite">
-            Current count: <strong>{currentCount}</strong>
-         </p>
-
-         <button className="btn btn-primary" onClick={incrementCounter}>
-            Increment
-         </button>
+         <canvas id="canvas"></canvas>
       </div>
    );
 }

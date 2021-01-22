@@ -2,11 +2,11 @@ import React, { Component } from 'react';
 import { Container } from 'reactstrap';
 import { NavMenu } from './NavMenu';
 
-export function Layout() {
+export function Layout(props) {
    return (
       <div>
          <NavMenu />
-         <Container>{this.props.children}</Container>
+         <Container>{props.children}</Container>
       </div>
    );
 }
