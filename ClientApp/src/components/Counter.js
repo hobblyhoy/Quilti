@@ -35,6 +35,19 @@ export function Counter() {
       });
    }, []);
 
+   useEffect(() => {
+      fetch('api/Patch').then(data => {
+         console.log({ data });
+         data.json().then(data2 => {
+            console.log({ data2 });
+         });
+      });
+   }, []);
+
+   // let getTest = async () => {
+   //    return await response.json();
+   // };
+
    return (
       <div>
          <canvas id="canvas"></canvas>
