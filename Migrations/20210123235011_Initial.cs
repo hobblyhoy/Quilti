@@ -14,9 +14,8 @@ namespace Quilti.Migrations
                     PatchId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     NorthPatchId = table.Column<int>(type: "int", nullable: true),
-                    SouthPatchId = table.Column<int>(type: "int", nullable: true),
-                    CreatorIp = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    HurDur = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    EastPatchId = table.Column<int>(type: "int", nullable: true),
+                    CreatorIp = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreatedDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     LastModifiedDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     ObjectStatus = table.Column<string>(type: "nvarchar(max)", nullable: true)
@@ -25,28 +24,32 @@ namespace Quilti.Migrations
                 {
                     table.PrimaryKey("PK_Patches", x => x.PatchId);
                     table.ForeignKey(
-                        name: "FK_Patches_Patches_NorthPatchId",
-                        column: x => x.NorthPatchId,
+                        name: "FK_Patches_Patches_EastPatchId",
+                        column: x => x.EastPatchId,
                         principalTable: "Patches",
                         principalColumn: "PatchId",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_Patches_Patches_SouthPatchId",
-                        column: x => x.SouthPatchId,
+                        name: "FK_Patches_Patches_NorthPatchId",
+                        column: x => x.NorthPatchId,
                         principalTable: "Patches",
                         principalColumn: "PatchId",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Patches_NorthPatchId",
+                name: "IX_Patches_EastPatchId",
                 table: "Patches",
-                column: "NorthPatchId");
+                column: "EastPatchId",
+                unique: true,
+                filter: "[EastPatchId] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Patches_SouthPatchId",
+                name: "IX_Patches_NorthPatchId",
                 table: "Patches",
-                column: "SouthPatchId");
+                column: "NorthPatchId",
+                unique: true,
+                filter: "[NorthPatchId] IS NOT NULL");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)

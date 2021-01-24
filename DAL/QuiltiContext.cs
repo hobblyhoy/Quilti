@@ -52,5 +52,20 @@ namespace Quilti.DAL
             AddTimestampsAndStatusCode();
             return await base.SaveChangesAsync(cancellationToken);
         }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Patch>().HasKey("PatchId");
+            modelBuilder.Entity<Patch>().Property("CreatorIp").IsRequired();
+
+            modelBuilder.Entity<Patch>()
+               .HasOne(x => x.NorthPatch)
+               .WithOne(x => x.SouthPatch)
+               .HasForeignKey(typeof(Patch), "NorthPatchId");
+            modelBuilder.Entity<Patch>()
+               .HasOne(x => x.EastPatch)
+               .WithOne(x => x.WestPatch)
+               .HasForeignKey(typeof(Patch), "EastPatchId");
+        }
     }
 }

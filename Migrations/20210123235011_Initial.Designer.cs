@@ -10,8 +10,8 @@ using Quilti.DAL;
 namespace Quilti.Migrations
 {
     [DbContext(typeof(QuiltiContext))]
-    [Migration("20210122063542_removeHur")]
-    partial class removeHur
+    [Migration("20210123235011_Initial")]
+    partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -32,7 +32,11 @@ namespace Quilti.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("CreatorIp")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("EastPatchId")
+                        .HasColumnType("int");
 
                     b.Property<DateTimeOffset?>("LastModifiedDate")
                         .HasColumnType("datetimeoffset");
@@ -43,31 +47,39 @@ namespace Quilti.Migrations
                     b.Property<string>("ObjectStatus")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("SouthPatchId")
-                        .HasColumnType("int");
-
                     b.HasKey("PatchId");
 
-                    b.HasIndex("NorthPatchId");
+                    b.HasIndex("EastPatchId")
+                        .IsUnique()
+                        .HasFilter("[EastPatchId] IS NOT NULL");
 
-                    b.HasIndex("SouthPatchId");
+                    b.HasIndex("NorthPatchId")
+                        .IsUnique()
+                        .HasFilter("[NorthPatchId] IS NOT NULL");
 
                     b.ToTable("Patches");
                 });
 
             modelBuilder.Entity("Quilti.Models.Patch", b =>
                 {
-                    b.HasOne("Quilti.Models.Patch", "NorthPatch")
-                        .WithMany()
-                        .HasForeignKey("NorthPatchId");
+                    b.HasOne("Quilti.Models.Patch", "EastPatch")
+                        .WithOne("WestPatch")
+                        .HasForeignKey("Quilti.Models.Patch", "EastPatchId");
 
-                    b.HasOne("Quilti.Models.Patch", "SouthPatch")
-                        .WithMany()
-                        .HasForeignKey("SouthPatchId");
+                    b.HasOne("Quilti.Models.Patch", "NorthPatch")
+                        .WithOne("SouthPatch")
+                        .HasForeignKey("Quilti.Models.Patch", "NorthPatchId");
+
+                    b.Navigation("EastPatch");
 
                     b.Navigation("NorthPatch");
+                });
 
+            modelBuilder.Entity("Quilti.Models.Patch", b =>
+                {
                     b.Navigation("SouthPatch");
+
+                    b.Navigation("WestPatch");
                 });
 #pragma warning restore 612, 618
         }
