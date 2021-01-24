@@ -154,12 +154,12 @@ export function Counter() {
                <div>
                   Regular:
                   <img src={testImage} height="100" width="100"></img>
-                  <img src={testImage}></img>
+                  <img src={testImage} height="250" width="250"></img>
                </div>
                <div>
                   Mini:
                   <img src={testImageMini} height="100" width="100"></img>
-                  <img src={testImageMini}></img>
+                  <img src={testImageMini} height="250" width="250"></img>
                </div>
             </div>
          )}
