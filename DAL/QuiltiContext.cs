@@ -59,6 +59,7 @@ namespace Quilti.DAL
             //// Patch \\\\
             modelBuilder.Entity<Patch>().HasKey("PatchId");
             modelBuilder.Entity<Patch>().Property("CreatorIp").IsRequired();
+            modelBuilder.Entity<Patch>().Property("ImageMini").HasColumnType("VARCHAR(MAX)");
 
             // Option 1
             //modelBuilder.Entity<Patch>()
@@ -96,7 +97,7 @@ namespace Quilti.DAL
 
             //// Patch Image \\\\
             modelBuilder.Entity<PatchImage>().HasKey("PatchImageId");
-            modelBuilder.Entity<PatchImage>().Property("Image").IsRequired();
+            modelBuilder.Entity<PatchImage>().Property("Image").HasColumnType("VARCHAR(MAX)").IsRequired();
 
             modelBuilder.Entity<Patch>()
                 .HasOne(p => p.PatchImage)

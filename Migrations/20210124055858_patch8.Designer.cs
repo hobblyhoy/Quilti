@@ -10,8 +10,8 @@ using Quilti.DAL;
 namespace Quilti.Migrations
 {
     [DbContext(typeof(QuiltiContext))]
-    [Migration("20210124040813_patch3")]
-    partial class patch3
+    [Migration("20210124055858_patch8")]
+    partial class patch8
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -38,8 +38,8 @@ namespace Quilti.Migrations
                     b.Property<int?>("EastPatchId")
                         .HasColumnType("int");
 
-                    b.Property<byte[]>("ImageMini")
-                        .HasColumnType("varbinary(max)");
+                    b.Property<string>("ImageMini")
+                        .HasColumnType("VARCHAR(MAX)");
 
                     b.Property<DateTimeOffset?>("LastModifiedDate")
                         .HasColumnType("datetimeoffset");
@@ -84,9 +84,18 @@ namespace Quilti.Migrations
                         .HasColumnType("int")
                         .UseIdentityColumn();
 
-                    b.Property<byte[]>("Image")
+                    b.Property<DateTimeOffset?>("CreatedDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Image")
                         .IsRequired()
-                        .HasColumnType("varbinary(max)");
+                        .HasColumnType("VARCHAR(MAX)");
+
+                    b.Property<DateTimeOffset?>("LastModifiedDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ObjectStatus")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("PatchId")
                         .HasColumnType("int");

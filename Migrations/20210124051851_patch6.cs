@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace Quilti.Migrations
 {
-    public partial class patch3 : Migration
+    public partial class patch6 : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -18,7 +18,7 @@ namespace Quilti.Migrations
                     EastPatchId = table.Column<int>(type: "int", nullable: true),
                     WestPatchId = table.Column<int>(type: "int", nullable: true),
                     CreatorIp = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    ImageMini = table.Column<byte[]>(type: "varbinary(max)", nullable: true),
+                    ImageMini = table.Column<string>(type: "VARCHAR", nullable: true),
                     CreatedDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     LastModifiedDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
                     ObjectStatus = table.Column<string>(type: "nvarchar(max)", nullable: true)
@@ -59,7 +59,10 @@ namespace Quilti.Migrations
                     PatchImageId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     PatchId = table.Column<int>(type: "int", nullable: true),
-                    Image = table.Column<byte[]>(type: "varbinary(max)", nullable: false)
+                    Image = table.Column<string>(type: "VARCHAR", nullable: false),
+                    CreatedDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    LastModifiedDate = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
+                    ObjectStatus = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {

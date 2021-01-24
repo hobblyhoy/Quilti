@@ -17,7 +17,7 @@ namespace Quilti.Models
         public virtual Patch WestPatch { get; set; }
 
         public string CreatorIp { get; set; }
-        public byte[] ImageMini { get; set; } //POC this soon but implement much later
+        public string ImageMini { get; set; }
 
         public virtual PatchImage PatchImage { get; set; }
 

@@ -10,8 +10,8 @@ using Quilti.DAL;
 namespace Quilti.Migrations
 {
     [DbContext(typeof(QuiltiContext))]
-    [Migration("20210124040954_patch4")]
-    partial class patch4
+    [Migration("20210124052848_patch7")]
+    partial class patch7
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -38,8 +38,8 @@ namespace Quilti.Migrations
                     b.Property<int?>("EastPatchId")
                         .HasColumnType("int");
 
-                    b.Property<byte[]>("ImageMini")
-                        .HasColumnType("varbinary(max)");
+                    b.Property<string>("ImageMini")
+                        .HasColumnType("VARCHAR(MAX)");
 
                     b.Property<DateTimeOffset?>("LastModifiedDate")
                         .HasColumnType("datetimeoffset");
@@ -87,9 +87,9 @@ namespace Quilti.Migrations
                     b.Property<DateTimeOffset?>("CreatedDate")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<byte[]>("Image")
+                    b.Property<string>("Image")
                         .IsRequired()
-                        .HasColumnType("varbinary(max)");
+                        .HasColumnType("VARCHAR(MAX)");
 
                     b.Property<DateTimeOffset?>("LastModifiedDate")
                         .HasColumnType("datetimeoffset");
