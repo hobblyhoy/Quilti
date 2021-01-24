@@ -6,10 +6,12 @@ using System.Threading.Tasks;
 
 namespace Quilti.Models
 {
-    public class PatchImage
+    public class PatchImage : EntityBase
     {
-        [Key]
         public int PatchImageId { get; set; }
+
+
+        public virtual Patch Patch { get; set; }
 
         public byte[] Image { get; set; }
     }

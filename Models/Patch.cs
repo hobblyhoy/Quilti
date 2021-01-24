@@ -11,23 +11,15 @@ namespace Quilti.Models
     {
         public int PatchId { get; set; }
 
-        //public int? NorthPatchId { get; set; }
-        //public int? SouthPatchId { get; set; }
-        //public int? EastPatchId { get; set; }
-        //public int? WestPatchId { get; set; }
-
-
         public virtual Patch NorthPatch { get; set; }
-
         public virtual Patch SouthPatch { get; set; }
-
         public virtual Patch EastPatch { get; set; }
-
         public virtual Patch WestPatch { get; set; }
 
         public string CreatorIp { get; set; }
+        public byte[] ImageMini { get; set; } //POC this soon but implement much later
 
-        //[ForeignKey("PatchImageId")]
-        //public virtual PatchImage PatchImage { get; set; }
+        public virtual PatchImage PatchImage { get; set; }
+
     }
 }

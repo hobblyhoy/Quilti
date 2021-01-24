@@ -32,7 +32,6 @@ namespace Quilti
             });
 
             services.AddDbContext<QuiltiContext>(options => options.UseSqlServer(Configuration["ConnectionStrings:DefaultConnection"]));
-
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -71,6 +70,13 @@ namespace Quilti
                     spa.UseReactDevelopmentServer(npmScript: "start");
                 }
             });
+
+            //Migrate DB
+            using (var serviceScope = app.ApplicationServices.GetService<IServiceScopeFactory>().CreateScope())
+            {
+                var context = serviceScope.ServiceProvider.GetRequiredService<QuiltiContext>();
+                context.Database.Migrate();
+            }
         }
     }
 }

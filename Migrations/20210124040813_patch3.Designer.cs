@@ -10,8 +10,8 @@ using Quilti.DAL;
 namespace Quilti.Migrations
 {
     [DbContext(typeof(QuiltiContext))]
-    [Migration("20210123235011_Initial")]
-    partial class Initial
+    [Migration("20210124040813_patch3")]
+    partial class patch3
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -38,6 +38,9 @@ namespace Quilti.Migrations
                     b.Property<int?>("EastPatchId")
                         .HasColumnType("int");
 
+                    b.Property<byte[]>("ImageMini")
+                        .HasColumnType("varbinary(max)");
+
                     b.Property<DateTimeOffset?>("LastModifiedDate")
                         .HasColumnType("datetimeoffset");
 
@@ -46,6 +49,12 @@ namespace Quilti.Migrations
 
                     b.Property<string>("ObjectStatus")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("SouthPatchId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("WestPatchId")
+                        .HasColumnType("int");
 
                     b.HasKey("PatchId");
 
@@ -57,29 +66,79 @@ namespace Quilti.Migrations
                         .IsUnique()
                         .HasFilter("[NorthPatchId] IS NOT NULL");
 
+                    b.HasIndex("SouthPatchId")
+                        .IsUnique()
+                        .HasFilter("[SouthPatchId] IS NOT NULL");
+
+                    b.HasIndex("WestPatchId")
+                        .IsUnique()
+                        .HasFilter("[WestPatchId] IS NOT NULL");
+
                     b.ToTable("Patches");
+                });
+
+            modelBuilder.Entity("Quilti.Models.PatchImage", b =>
+                {
+                    b.Property<int>("PatchImageId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .UseIdentityColumn();
+
+                    b.Property<byte[]>("Image")
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<int?>("PatchId")
+                        .HasColumnType("int");
+
+                    b.HasKey("PatchImageId");
+
+                    b.HasIndex("PatchId")
+                        .IsUnique()
+                        .HasFilter("[PatchId] IS NOT NULL");
+
+                    b.ToTable("PatchImages");
                 });
 
             modelBuilder.Entity("Quilti.Models.Patch", b =>
                 {
                     b.HasOne("Quilti.Models.Patch", "EastPatch")
-                        .WithOne("WestPatch")
+                        .WithOne()
                         .HasForeignKey("Quilti.Models.Patch", "EastPatchId");
 
                     b.HasOne("Quilti.Models.Patch", "NorthPatch")
-                        .WithOne("SouthPatch")
+                        .WithOne()
                         .HasForeignKey("Quilti.Models.Patch", "NorthPatchId");
+
+                    b.HasOne("Quilti.Models.Patch", "SouthPatch")
+                        .WithOne()
+                        .HasForeignKey("Quilti.Models.Patch", "SouthPatchId");
+
+                    b.HasOne("Quilti.Models.Patch", "WestPatch")
+                        .WithOne()
+                        .HasForeignKey("Quilti.Models.Patch", "WestPatchId");
 
                     b.Navigation("EastPatch");
 
                     b.Navigation("NorthPatch");
+
+                    b.Navigation("SouthPatch");
+
+                    b.Navigation("WestPatch");
+                });
+
+            modelBuilder.Entity("Quilti.Models.PatchImage", b =>
+                {
+                    b.HasOne("Quilti.Models.Patch", "Patch")
+                        .WithOne("PatchImage")
+                        .HasForeignKey("Quilti.Models.PatchImage", "PatchId");
+
+                    b.Navigation("Patch");
                 });
 
             modelBuilder.Entity("Quilti.Models.Patch", b =>
                 {
-                    b.Navigation("SouthPatch");
-
-                    b.Navigation("WestPatch");
+                    b.Navigation("PatchImage");
                 });
 #pragma warning restore 612, 618
         }
