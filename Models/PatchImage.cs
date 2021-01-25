@@ -10,7 +10,7 @@ namespace Quilti.Models
     {
         public int PatchImageId { get; set; }
 
-
+        public int? PatchId { get; set; }
         public virtual Patch Patch { get; set; }
 
         // technically should be varbinary but based on real world testing theres only slightly more storage usage as a varchar (1.34x)
