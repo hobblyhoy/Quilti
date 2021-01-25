@@ -46,7 +46,7 @@ namespace Quilti.CustomObjects
                 // North Check
                 if (nextUnprocessedPatch.RowIndex > 0 && nextUnprocessedPatch.Patch.NorthPatchId != null)
                 {
-                    Patches2D[nextUnprocessedPatch.RowIndex - 1, nextUnprocessedPatch.ColumnIndex] = PatchManager.GetPatch(_context, (int)nextUnprocessedPatch.Patch.NorthPatchId);
+                    //Patches2D[nextUnprocessedPatch.RowIndex - 1, nextUnprocessedPatch.ColumnIndex] = PatchManager.GetPatch(_context, (int)nextUnprocessedPatch.Patch.NorthPatchId);
                 }
 
                 // South Check
