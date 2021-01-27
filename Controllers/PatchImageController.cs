@@ -24,7 +24,6 @@ namespace Quilti.Controllers
         [HttpGet("{patchId}")]
         public async Task<string> Get(int patchId)
         {
-            // TODO I <3 you entity framework but I cant be trust you to not botch this query..
             var query = _context.PatchImages.Where(p => p.Patch.PatchId == patchId);
             var queryString = query.ToQueryString();
 
