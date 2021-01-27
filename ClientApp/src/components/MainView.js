@@ -9,6 +9,7 @@ export function MainView() {
       // that might actually be kind of hard to determine since remember theres the "reserved" state
       let resp = await axios.get('/api/Patch/' + patchId);
       return resp.data;
+      // TODO decorate with some kind of "src" prop that will always hold the current source. It can also preload to our palceholder when it's reserved
    };
 
    let nextUnprocessedPatch = async (grid, gridStatus) => {
@@ -28,34 +29,45 @@ export function MainView() {
          console.log({ next });
          // Get all surrounding patches that reside within our grid
 
-         // if we know theres a patch north of us, we're not on the top row, and the item above us isnt in our grid yet..
+         // if theres a patch north of us, we're not on the top row, and the item above us isnt in our grid yet..
+         let northPatchAwaited, southPatchAwaited, eastPatchAwaited, westPatchAwaited;
          if (next.patch.northPatchId && next.rowIndex > 0 && grid[next.columnIndex][next.rowIndex - 1] === null) {
-            let northPatch = await getPatch(next.patch.northPatchId);
-            grid[next.columnIndex][next.rowIndex - 1] = northPatch;
+            northPatchAwaited = getPatch(next.patch.northPatchId);
          }
 
-         // if we know theres a patch south of us, we're not on the bottom row, and the item below isn't in our grid yet..
+         // if theres a patch south of us, we're not on the bottom row, and the item below isn't in our grid yet..
          if (next.patch.southPatchId && next.rowIndex < grid[0].length - 1 && grid[next.columnIndex][next.rowIndex + 1] === null) {
-            let southPatch = await getPatch(next.patch.southPatchId);
-            grid[next.columnIndex][next.rowIndex + 1] = southPatch;
+            southPatchAwaited = getPatch(next.patch.southPatchId);
          }
-         // TODO  east, west.
 
          // if theres a patch east of us, we're not on the far right column, and the patch to our right isnt in oru grid yet..
          if (next.patch.eastPatchId && next.columnIndex < grid.length - 1 && grid[next.columnIndex + 1][next.rowIndex] === null) {
-            let eastPatch = await getPatch(next.patch.eastPatchId);
-            grid[next.columnIndex + 1][next.rowIndex] = eastPatch;
+            eastPatchAwaited = getPatch(next.patch.eastPatchId);
          }
 
          // if theres a patch west of us, we're not in the first column, and the patch to our left isnt in our grid yet...
          if (next.patch.westPatchId && next.columnIndex > 0 && grid[next.columnIndex - 1][next.rowIndex] === null) {
-            let westPatch = await getPatch(next.patch.westPatchId);
+            westPatchAwaited = getPatch(next.patch.westPatchId);
+         }
+
+         if (northPatchAwaited) {
+            let northPatch = await northPatchAwaited;
+            grid[next.columnIndex][next.rowIndex - 1] = northPatch;
+         }
+         if (southPatchAwaited) {
+            let southPatch = await southPatchAwaited;
+            grid[next.columnIndex][next.rowIndex + 1] = southPatch;
+         }
+         if (eastPatchAwaited) {
+            let eastPatch = await eastPatchAwaited;
+            grid[next.columnIndex + 1][next.rowIndex] = eastPatch;
+         }
+         if (westPatchAwaited) {
+            let westPatch = await westPatchAwaited;
             grid[next.columnIndex - 1][next.rowIndex] = westPatch;
          }
 
          // TODO if we got a north, south, east, west patch and all came back as active, add it to the local cache
-
-         // TODO figure out how to get all these to run in parallel
 
          // Mark the current block as proccessed
          gridStatus[next.columnIndex][next.rowIndex] = true;
@@ -131,6 +143,13 @@ export function MainView() {
       initialLoad();
    }, []);
 
+   let fakeLazyLoad = () => {
+      let fullGridCopy = [...fullGrid];
+      fullGridCopy[0][0].imageMini = 'https://via.placeholder.com/200';
+
+      setFullGrid(fullGridCopy);
+   };
+
    return (
       <div>
          <span>Hi this is the main view</span>
@@ -140,12 +159,13 @@ export function MainView() {
                   return (
                      <div style={{ display: 'flex', flexDirection: 'column' }}>
                         {column.map(row => (
-                           <div style={{ display: 'block', width: '200px', height: '200px' }}>| {row ? row.patchId : '-'} |</div>
+                           <img src={row ? row.imageMini : 'https://via.placeholder.com/200'} style={{ width: '200px', height: '200px' }} />
                         ))}
                      </div>
                   );
                })}
          </div>
+         <button onClick={fakeLazyLoad}>Simulate a lazy load</button>
       </div>
    );
 }

@@ -4,6 +4,7 @@ using Quilti.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Quilti.Managers
@@ -19,7 +20,7 @@ namespace Quilti.Managers
                 return context.Patches.First(p => p.PatchId == patchId);
             });
 
-
+            Thread.Sleep(50);
             return patch;
         }
     }
