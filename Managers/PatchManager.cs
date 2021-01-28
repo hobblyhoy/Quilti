@@ -20,7 +20,7 @@ namespace Quilti.Managers
                 return context.Patches.First(p => p.PatchId == patchId);
             });
 
-            Thread.Sleep(50);
+            //Thread.Sleep(50);
             return patch;
         }
     }
