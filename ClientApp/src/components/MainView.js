@@ -15,6 +15,7 @@ import {
 } from '../Utilities';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleDoubleUp, faAngleDoubleDown, faAngleDoubleLeft, faAngleDoubleRight } from '@fortawesome/free-solid-svg-icons';
+import { db_init, db_patchImage_get, db_patch_insertSafe, db_patch_get } from '../DB';
 
 export function MainView() {
    const [fullGrid, setFullGrid] = useState(null);
@@ -24,6 +25,7 @@ export function MainView() {
    const [imageSize, setImageSize] = useState(200);
    const [buttonSize, setButtonSize] = useState(30);
    const [mainAreaHeight, setMainAreaHeight] = useState(1);
+   const [dbIsInitialized, setDbIsInitialized] = useState(false);
 
    let decoratePatch = patch => {
       // TODO check against our internal DB here for full images
@@ -33,13 +35,31 @@ export function MainView() {
    };
 
    let getPatch = async patchId => {
-      //TODO local cacheing (only if all neighbours are filled)
-      // that might actually be kind of hard to determine since remember theres the "reserved" state
-      let resp = await axios.get('/api/Patch/' + patchId);
-      return decoratePatch(resp.data);
-      // TODO decorate with some kind of "src" prop that will always hold the current source. It can also preload to our palceholder when it's reserved
+      let patch = await db_patch_get(patchId);
+      if (!patch) {
+         let resp = await axios.get('/api/Patch/' + patchId);
+         patch = resp.data;
+      }
+
+      return decoratePatch(patch);
+      // TODO if we have any issues with flashing we may want to just absorb the additional maintenance
+      // and have this thing seek out any locally available patchImages before returning
+      // if we do do this, make sure we're only grabbing from the db cache and let our little loop sort out filling in the full db images
    };
 
+   let getPatchImage = async patchId => {
+      let patchImage = await db_patchImage_get(patchId);
+      if (!patchImage) {
+         let resp = await axios.get('/api/PatchImage/' + patchId);
+         patchImage = resp.data;
+
+         db_patchImage_insertSafe(patchImage);
+      }
+
+      return patchImage;
+   };
+
+   // TODO replace this with my util_gridFirstOrDefault
    let nextUnprocessedPatch = async (grid, gridStatus) => {
       for (let i = 0; i < util_gridColumnCount(grid); i++) {
          for (let j = 0; j < util_gridRowCount(grid); j++) {
@@ -56,6 +76,7 @@ export function MainView() {
       while (next) {
          // if theres a patch north of us, we're not on the top row, and the item above us isnt in our grid yet..
          let northPatchAwaited, southPatchAwaited, eastPatchAwaited, westPatchAwaited;
+         let northPatch, southPatch, eastPatch, westPatch;
          if (next.patch.northPatchId && next.rowIndex > 0 && grid[next.columnIndex][next.rowIndex - 1] === null) {
             northPatchAwaited = getPatch(next.patch.northPatchId);
          }
@@ -77,20 +98,27 @@ export function MainView() {
          }
 
          if (northPatchAwaited) {
-            let northPatch = await northPatchAwaited;
+            northPatch = await northPatchAwaited;
             grid[next.columnIndex][next.rowIndex - 1] = northPatch;
          }
          if (southPatchAwaited) {
-            let southPatch = await southPatchAwaited;
+            southPatch = await southPatchAwaited;
             grid[next.columnIndex][next.rowIndex + 1] = southPatch;
          }
          if (eastPatchAwaited) {
-            let eastPatch = await eastPatchAwaited;
+            eastPatch = await eastPatchAwaited;
             grid[next.columnIndex + 1][next.rowIndex] = eastPatch;
          }
          if (westPatchAwaited) {
-            let westPatch = await westPatchAwaited;
+            westPatch = await westPatchAwaited;
             grid[next.columnIndex - 1][next.rowIndex] = westPatch;
+         }
+
+         // TODO add the additional directional patches to this IF
+         if (northPatch && northPatch.objectStatus === 'ACT') {
+            // const db_patches = useIndexedDB('patches');
+            // db_patches.add(next.patch, next.patch.patchId);
+            await db_patch_insertSafe(next.patch);
          }
 
          // TODO if we got a north, south, east, west patch and all came back as active, add it to the local cache
@@ -104,6 +132,11 @@ export function MainView() {
    };
 
    let initialLoad = async () => {
+      if (!dbIsInitialized) {
+         // only needed because of HMR, if this is a prod build we can pull it out
+         db_init();
+         setDbIsInitialized(true);
+      }
       // Initial load
       // Make a request for the first item
       let resp = await axios.get('/api/Patch');
@@ -141,11 +174,11 @@ export function MainView() {
    }, []);
 
    let patchClick = (patch, columnIndex, rowIndex) => {
-      //TODO
+      //TODO, all of it
       console.log({ patch, columnIndex, rowIndex });
    };
 
-   let moveToThe = async direction => {
+   let moveGrid = async direction => {
       console.log('in move');
       let grid, gridStatus;
       switch (direction) {
@@ -177,12 +210,17 @@ export function MainView() {
       setFullGridStatus([...gridStatus]);
    };
 
+   // TODO consider just folding this into the useEffect below
    let checkForFullImages = () => {
       let test = util_gridFirstOrDefault(fullGrid, patch => patch && patch.patchId === 5);
       console.log({ test });
-      // TODO search for and get the full iamge if any are missing
-      // tie into an indexedDB saving here
-      // should we do the get here too or work that into the getPatch? I think the latter would be better but think on it.
+      let nextMissingFullImage = util_gridFirstOrDefault(fullGrid, patch => patch && !patch.__fullImageLoaded);
+      if (nextMissingFullImage) {
+         // TODO
+         // grab it using getPatchImage
+         // apply the resulting image back to the patch in __src and set it's fullImageLoaded flag
+         // save this all to fullgrid, so that we kick off the cycle again (hopefully! if not, recurse!)
+      }
    };
 
    useEffect(() => {
@@ -211,22 +249,22 @@ export function MainView() {
             <div style={gridContainer}>
                <div
                   style={{ gridColumnStart: 2, gridColumnEnd: 3, gridRowStart: 1, gridRowEnd: 2, ...alignCenter }}
-                  onClick={() => moveToThe('up')}>
+                  onClick={() => moveGrid('up')}>
                   <FontAwesomeIcon icon={faAngleDoubleUp} />
                </div>
                <div
                   style={{ gridColumnStart: 2, gridColumnEnd: 3, gridRowStart: 3, gridRowEnd: 4, ...alignCenter }}
-                  onClick={() => moveToThe('down')}>
+                  onClick={() => moveGrid('down')}>
                   <FontAwesomeIcon icon={faAngleDoubleDown} />
                </div>
                <div
                   style={{ gridColumnStart: 1, gridColumnEnd: 2, gridRowStart: 2, gridRowEnd: 3, ...alignCenter }}
-                  onClick={() => moveToThe('left')}>
+                  onClick={() => moveGrid('left')}>
                   <FontAwesomeIcon icon={faAngleDoubleLeft} />
                </div>
                <div
                   style={{ gridColumnStart: 3, gridColumnEnd: 4, gridRowStart: 2, gridRowEnd: 3, ...alignCenter }}
-                  onClick={() => moveToThe('right')}>
+                  onClick={() => moveGrid('right')}>
                   <FontAwesomeIcon icon={faAngleDoubleRight} />
                </div>
 

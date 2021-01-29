@@ -38,9 +38,9 @@ namespace Quilti.Controllers
         }
 
         [HttpGet("{patchId}")]
-        public async Task<Patch> Get(int patchId)
+        public async Task<PatchGetRequestDto> Get(int patchId)
         {
-            return PatchManager.GetPatch(_context, _cache, patchId);
+            return new PatchGetRequestDto(PatchManager.GetPatch(_context, _cache, patchId));
         }
 
 
