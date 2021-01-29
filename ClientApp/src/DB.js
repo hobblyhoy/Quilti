@@ -39,18 +39,17 @@ export async function db_patch_get(patchId) {
 
 export async function db_patchImage_get(patchId) {
    //TODO stub until I configure the db
-   return null;
+   // return null;
    const db = useIndexedDB('patchImages');
-   return await db.getByID(patchId);
+   let obj = await db.getByID(patchId);
+   return obj && obj.image;
 }
 
-export async function db_patchImage_insertSafe(patchImageParam) {
+export async function db_patchImage_insertSafe(patchId, image) {
    //TODO stub until I configure the db
-   return null;
-   let patchImage = { ...patchImageParam };
    const db = useIndexedDB('patchImages');
-   let existingVal = await db.getByID(patchImage.patchId);
+   let existingVal = await db.getByID(patchId);
    if (!existingVal) {
-      db.add(patchImage, patchImage.patchId);
+      db.add({ image }, patchId);
    }
 }

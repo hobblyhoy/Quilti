@@ -14,5 +14,13 @@
             { name: 'objectStatus', keypath: 'objectStatus', options: { unique: false } },
          ],
       },
+      {
+         store: 'patchImages',
+         storeConfig: { key: 'patchId' },
+         storeSchema: [
+            { name: 'patchId', keypath: 'patchId', options: { unique: false } },
+            { name: 'image', keypath: 'image', options: { unique: false } },
+         ],
+      },
    ],
 };

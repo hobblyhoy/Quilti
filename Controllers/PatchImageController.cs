@@ -24,10 +24,7 @@ namespace Quilti.Controllers
         [HttpGet("{patchId}")]
         public async Task<string> Get(int patchId)
         {
-            var query = _context.PatchImages.Where(p => p.Patch.PatchId == patchId);
-            var queryString = query.ToQueryString();
-
-            var patchImage = _context.PatchImages.First(p => p.Patch.PatchId == patchId);
+            var patchImage = _context.PatchImages.First(p => p.PatchId == patchId);
             return patchImage.Image;
         }
 
@@ -38,3 +35,6 @@ namespace Quilti.Controllers
         }
     }
 }
+
+//var query = _context.PatchImages.Where(p => p.Patch.PatchId == patchId);
+//var queryString = query.ToQueryString();

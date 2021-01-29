@@ -12,10 +12,11 @@ import {
    util_gridShiftDown,
    util_gridRowCount,
    util_gridFirstOrDefault,
+   util_patchDecorate,
 } from '../Utilities';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleDoubleUp, faAngleDoubleDown, faAngleDoubleLeft, faAngleDoubleRight } from '@fortawesome/free-solid-svg-icons';
-import { db_init, db_patchImage_get, db_patch_insertSafe, db_patch_get } from '../DB';
+import { db_init, db_patch_get, db_patch_insertSafe, db_patchImage_get, db_patchImage_insertSafe } from '../DB';
 
 export function MainView() {
    const [fullGrid, setFullGrid] = useState(null);
@@ -27,13 +28,6 @@ export function MainView() {
    const [mainAreaHeight, setMainAreaHeight] = useState(1);
    const [dbIsInitialized, setDbIsInitialized] = useState(false);
 
-   let decoratePatch = patch => {
-      // TODO check against our internal DB here for full images
-      patch.__src = patch.imageMini;
-      patch.__fullImageLoaded = false;
-      return patch;
-   };
-
    let getPatch = async patchId => {
       let patch = await db_patch_get(patchId);
       if (!patch) {
@@ -41,25 +35,23 @@ export function MainView() {
          patch = resp.data;
       }
 
-      return decoratePatch(patch);
-      // TODO if we have any issues with flashing we may want to just absorb the additional maintenance
-      // and have this thing seek out any locally available patchImages before returning
-      // if we do do this, make sure we're only grabbing from the db cache and let our little loop sort out filling in the full db images
+      // image might be null here, we're cool with that
+      let image = await db_patchImage_get(patchId);
+      return util_patchDecorate(patch, image);
    };
 
    let getPatchImage = async patchId => {
-      let patchImage = await db_patchImage_get(patchId);
-      if (!patchImage) {
+      let image = await db_patchImage_get(patchId);
+      if (!image) {
          let resp = await axios.get('/api/PatchImage/' + patchId);
-         patchImage = resp.data;
+         image = resp.data;
 
-         db_patchImage_insertSafe(patchImage);
+         db_patchImage_insertSafe(patchId, image);
       }
 
-      return patchImage;
+      return image;
    };
 
-   // TODO replace this with my util_gridFirstOrDefault
    let nextUnprocessedPatch = async (grid, gridStatus) => {
       for (let i = 0; i < util_gridColumnCount(grid); i++) {
          for (let j = 0; j < util_gridRowCount(grid); j++) {
@@ -72,7 +64,6 @@ export function MainView() {
 
    let fillGrid = async (grid, gridStatus) => {
       let next = await nextUnprocessedPatch(grid, gridStatus);
-      //console.log({ next });
       while (next) {
          // if theres a patch north of us, we're not on the top row, and the item above us isnt in our grid yet..
          let northPatchAwaited, southPatchAwaited, eastPatchAwaited, westPatchAwaited;
@@ -114,14 +105,19 @@ export function MainView() {
             grid[next.columnIndex - 1][next.rowIndex] = westPatch;
          }
 
-         // TODO add the additional directional patches to this IF
-         if (northPatch && northPatch.objectStatus === 'ACT') {
-            // const db_patches = useIndexedDB('patches');
-            // db_patches.add(next.patch, next.patch.patchId);
+         // Only insert into your local cache if all the surrounding cells are completed
+         if (
+            northPatch &&
+            northPatch.objectStatus === 'ACT' &&
+            southPatch &&
+            southPatch.objectStatus === 'ACT' &&
+            eastPatch &&
+            eastPatch.objectStatus === 'ACT' &&
+            westPatch &&
+            westPatch.objectStatus === 'ACT'
+         ) {
             await db_patch_insertSafe(next.patch);
          }
-
-         // TODO if we got a north, south, east, west patch and all came back as active, add it to the local cache
 
          // Mark the current block as proccessed
          gridStatus[next.columnIndex][next.rowIndex] = true;
@@ -159,7 +155,7 @@ export function MainView() {
          gridRowIndex = gridRows > 1 ? 1 : 0;
       } //TODO the rest of these..
 
-      grid[gridColumnIndex][gridRowIndex] = decoratePatch(initialPatch);
+      grid[gridColumnIndex][gridRowIndex] = util_patchDecorate(initialPatch);
 
       setMainAreaHeight(window.innerHeight - document.getElementById('nav').offsetHeight);
 
@@ -179,7 +175,6 @@ export function MainView() {
    };
 
    let moveGrid = async direction => {
-      console.log('in move');
       let grid, gridStatus;
       switch (direction) {
          case 'up':
@@ -211,15 +206,14 @@ export function MainView() {
    };
 
    // TODO consider just folding this into the useEffect below
-   let checkForFullImages = () => {
-      let test = util_gridFirstOrDefault(fullGrid, patch => patch && patch.patchId === 5);
-      console.log({ test });
-      let nextMissingFullImage = util_gridFirstOrDefault(fullGrid, patch => patch && !patch.__fullImageLoaded);
-      if (nextMissingFullImage) {
-         // TODO
-         // grab it using getPatchImage
-         // apply the resulting image back to the patch in __src and set it's fullImageLoaded flag
-         // save this all to fullgrid, so that we kick off the cycle again (hopefully! if not, recurse!)
+   let checkForFullImages = async () => {
+      let result = util_gridFirstOrDefault(fullGrid, patch => patch && !patch.__fullImageLoaded);
+      let patchMissingFullImage = result && result.patch;
+      if (patchMissingFullImage) {
+         let image = await getPatchImage(patchMissingFullImage.patchId);
+         util_patchDecorate(patchMissingFullImage, image);
+
+         setFullGrid([...fullGrid]);
       }
    };
 

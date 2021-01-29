@@ -114,3 +114,14 @@ export function util_debugGrid(grid) {
    let transpose = m => m[0].map((x, i) => m.map(x => x[i]));
    console.table(transpose(idsOnlyGrid));
 }
+
+export function util_patchDecorate(patch, image) {
+   if (image && image.length > 0) {
+      patch.__src = image;
+      patch.__fullImageLoaded = true;
+   } else {
+      patch.__src = patch.imageMini;
+      patch.__fullImageLoaded = false;
+   }
+   return patch;
+}
