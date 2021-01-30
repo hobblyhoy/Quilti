@@ -1,57 +1,45 @@
-import React, { Component } from 'react';
+import React, { useState } from 'react';
 import { Collapse, Container, Navbar, NavbarBrand, NavbarToggler, NavItem, NavLink } from 'reactstrap';
 import { Link } from 'react-router-dom';
 import './NavMenu.css';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTh } from '@fortawesome/free-solid-svg-icons';
 
-export class NavMenu extends Component {
-   static displayName = NavMenu.name;
+export function NavMenu(props) {
+   const [collapsed, setCollapsed] = useState(true);
 
-   constructor(props) {
-      super(props);
+   let toggleNavbar = () => {
+      setCollapsed(collapsed => !collapsed);
+   };
 
-      this.toggleNavbar = this.toggleNavbar.bind(this);
-      this.state = {
-         collapsed: true,
-      };
-   }
-
-   toggleNavbar() {
-      this.setState({
-         collapsed: !this.state.collapsed,
-      });
-   }
-
-   render() {
-      return (
-         <header>
-            <Navbar id="nav" className="navbar-expand-sm navbar-toggleable-sm ng-white border-bottom box-shadow" light>
-               <Container>
-                  <NavbarBrand tag={Link} to="/">
-                     Quilti
-                  </NavbarBrand>
-                  <NavbarToggler onClick={this.toggleNavbar} className="mr-2" />
-                  <Collapse className="d-sm-inline-flex flex-sm-row-reverse" isOpen={!this.state.collapsed} navbar>
-                     <ul className="navbar-nav flex-grow">
-                        <NavItem>
-                           <NavLink tag={Link} className="text-dark" to="/">
-                              Home
-                           </NavLink>
-                        </NavItem>
-                        <NavItem>
-                           <NavLink tag={Link} className="text-dark" to="/counter">
-                              Counter
-                           </NavLink>
-                        </NavItem>
-                        <NavItem>
-                           <NavLink tag={Link} className="text-dark" to="/fetch-data">
-                              Fetch data
-                           </NavLink>
-                        </NavItem>
-                     </ul>
-                  </Collapse>
-               </Container>
-            </Navbar>
-         </header>
-      );
-   }
+   return (
+      <header>
+         <Navbar id="nav" className="navbar-expand-sm navbar-toggleable-sm ng-white border-bottom box-shadow" light>
+            <Container>
+               <NavbarBrand tag={Link} to="/">
+                  <FontAwesomeIcon icon={faTh} /> Quilti
+               </NavbarBrand>
+               <NavbarToggler onClick={toggleNavbar} className="mr-2" />
+               <Collapse className="d-sm-inline-flex flex-sm-row-reverse" isOpen={!collapsed} navbar>
+                  <ul className="navbar-nav flex-grow">
+                     <NavItem>
+                        <NavLink className="text-dark">Home</NavLink>
+                     </NavItem>
+                     <NavItem>
+                        <NavLink tag={Link} className="text-dark" to="/counter">
+                           Counter
+                        </NavLink>
+                     </NavItem>
+                     <NavItem>
+                        <NavLink tag={Link} className="text-dark" to="/fetch-data">
+                           Fetch data
+                        </NavLink>
+                     </NavItem>
+                     {/* {props.children} */}
+                  </ul>
+               </Collapse>
+            </Container>
+         </Navbar>
+      </header>
+   );
 }

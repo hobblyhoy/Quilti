@@ -14,7 +14,11 @@ import { DBConfig } from './DBConfig';
 
 export function db_init() {
    console.log('init');
-   initDB(DBConfig);
+   try {
+      initDB(DBConfig);
+   } catch {
+      console.error('failed to initialize DB (probably already initialized)');
+   }
 }
 
 export async function db_patch_insertSafe(patchParam) {
