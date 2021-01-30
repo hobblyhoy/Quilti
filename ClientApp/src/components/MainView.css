@@ -1,0 +1,50 @@
+.align-center{
+   display: flex;
+   align-items: center;
+   justify-content: center;
+}
+
+.grid-flexbox-container {
+   display: flex;
+}
+
+.column-container {
+   display: flex;
+   flex-direction: column;
+}
+
+.patch-clickable {
+   cursor: pointer;
+   transition: all ease 500ms;
+}
+.patch-clickable:hover {
+   transform: scale(1.1);
+}
+
+button {
+   border: 0;
+   background-color: initial;
+   transition: all ease 500ms;
+}
+
+.button-up {
+   border-top-left-radius: 15px;
+   border-top-right-radius: 15px;
+}
+.button-down {
+   border-bottom-left-radius: 15px;
+   border-bottom-right-radius: 15px;
+}
+.button-left {
+   border-top-left-radius: 15px;
+   border-bottom-left-radius: 15px;
+}
+.button-right {
+   border-top-right-radius: 15px;
+   border-bottom-right-radius: 15px;
+}
+
+
+button:hover {
+   background-color: lightgray;
+}

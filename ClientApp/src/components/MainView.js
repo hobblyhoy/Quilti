@@ -13,21 +13,27 @@ import {
    util_gridRowCount,
    util_gridFirstOrDefault,
    util_patchDecorate,
+   util_patchApplyFullImage,
+   util_gridGetSurroundingPatches,
 } from '../Utilities';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleDoubleUp, faAngleDoubleDown, faAngleDoubleLeft, faAngleDoubleRight } from '@fortawesome/free-solid-svg-icons';
 import { db_init, db_patch_get, db_patch_insertSafe, db_patchImage_get, db_patchImage_insertSafe } from '../DB';
+import placeholderImageCheckers from '../assets/checkers2.png';
+import placeholderImageReserved from '../assets/reserved.png';
+import './MainView.css';
 
 export function MainView() {
    const [fullGrid, setFullGrid] = useState(null);
    const [fullGridStatus, setFullGridStatus] = useState(null);
    const [columns, setColumns] = useState(0);
    const [rows, setRows] = useState(0);
-   const [imageSize, setImageSize] = useState(200);
+   const [imageSize, setImageSize] = useState(150);
    const [buttonSize, setButtonSize] = useState(30);
    const [mainAreaHeight, setMainAreaHeight] = useState(1);
    const [dbIsInitialized, setDbIsInitialized] = useState(false);
 
+   //// Primary object getters \\\\
    let getPatch = async patchId => {
       let patch = await db_patch_get(patchId);
       if (!patch) {
@@ -35,9 +41,15 @@ export function MainView() {
          patch = resp.data;
       }
 
-      // image might be null here, we're cool with that
+      util_patchDecorate(patch);
+
+      // IF this is a reserved patch, apply it's reserved image
+      if (patch.objectStatus === 'RES') util_patchApplyFullImage(patch, placeholderImageReserved);
+
+      // If we already have the full image in our local db, apply it now
       let image = await db_patchImage_get(patchId);
-      return util_patchDecorate(patch, image);
+      if (image) util_patchApplyFullImage(patch, image);
+      return patch;
    };
 
    let getPatchImage = async patchId => {
@@ -52,6 +64,60 @@ export function MainView() {
       return image;
    };
 
+   //// Initial Load \\\\
+   let initialLoad = async () => {
+      if (!dbIsInitialized) {
+         db_init();
+         // only needed because of HMR, if this is a prod build we can pull it out
+         setDbIsInitialized(true);
+      }
+      // Initial load
+      // Make a request for the first item
+      let resp = await axios.get('/api/Patch');
+      let initialPatch = resp.data;
+      let buttonBuffer = 2 * buttonSize;
+      let navBuffer = 100; //hard code just for POC
+      let gridColumns = Math.floor((window.innerWidth - buttonBuffer) / imageSize);
+      let gridRows = Math.floor((window.innerHeight - buttonBuffer - navBuffer) / imageSize);
+      setColumns(gridColumns);
+      setRows(gridRows);
+
+      // Initialize an empty grid and gridStatus
+      let grid = util_gridInitialize(gridColumns, gridRows, null);
+      let gridStatus = util_gridInitialize(gridColumns, gridRows, false);
+
+      // Our initial patch will always be missing at least one of north/south/east/west directions
+      // we need to figure out which it is and strategically position it in the grid to be conducive for adding onto the quilt
+      let gridColumnIndex;
+      let gridRowIndex;
+      if (!initialPatch.northPatchId) {
+         gridColumnIndex = Math.floor(gridColumns / 2);
+         gridRowIndex = 1;
+      } else if (!initialPatch.southPatchId) {
+         gridColumnIndex = Math.floor(gridColumns / 2);
+         gridRowIndex = gridRows - 2;
+      } else if (!initialPatch.eastPatch) {
+         gridColumnIndex = 1;
+         gridRowIndex = Math.floor(gridRows) / 2;
+      } else if (!initialPatch.westPatch) {
+         gridColumnIndex = gridColumns - 2;
+         gridRowIndex = Math.floor(gridRowIndex) / 2;
+      }
+
+      grid[gridColumnIndex][gridRowIndex] = util_patchDecorate(initialPatch);
+
+      setMainAreaHeight(window.innerHeight - document.getElementById('nav').offsetHeight);
+
+      // fill in the rest of the grid..
+      await fillGrid(grid, gridStatus);
+      setFullGrid(grid);
+      setFullGridStatus(gridStatus);
+   };
+   useEffect(() => {
+      initialLoad();
+   }, []);
+
+   //// Main and support functions for filling the grid \\\\
    let nextUnprocessedPatch = async (grid, gridStatus) => {
       for (let i = 0; i < util_gridColumnCount(grid); i++) {
          for (let j = 0; j < util_gridRowCount(grid); j++) {
@@ -65,26 +131,25 @@ export function MainView() {
    let fillGrid = async (grid, gridStatus) => {
       let next = await nextUnprocessedPatch(grid, gridStatus);
       while (next) {
-         // if theres a patch north of us, we're not on the top row, and the item above us isnt in our grid yet..
+         let surroundingPatches = util_gridGetSurroundingPatches(grid, next.columnIndex, next.rowIndex);
+
+         // if theres a patch north of us, we're not on the top row, and the item above us isn't in our grid yet..
+         //cannot be a simple !surroundingPatches.xxxxPatch check, we get undefined for patches outside our current grid
          let northPatchAwaited, southPatchAwaited, eastPatchAwaited, westPatchAwaited;
          let northPatch, southPatch, eastPatch, westPatch;
-         if (next.patch.northPatchId && next.rowIndex > 0 && grid[next.columnIndex][next.rowIndex - 1] === null) {
+         if (next.patch.northPatchId && surroundingPatches.northPatch === null) {
             northPatchAwaited = getPatch(next.patch.northPatchId);
          }
          // if theres a patch south of us, we're not on the bottom row, and the item below isn't in our grid yet..
-         if (next.patch.southPatchId && next.rowIndex < util_gridRowCount(grid) - 1 && grid[next.columnIndex][next.rowIndex + 1] === null) {
+         if (next.patch.southPatchId && surroundingPatches.southPatch === null) {
             southPatchAwaited = getPatch(next.patch.southPatchId);
          }
-         // if theres a patch east of us, we're not on the far right column, and the patch to our right isnt in oru grid yet..
-         if (
-            next.patch.eastPatchId &&
-            next.columnIndex < util_gridColumnCount(grid) - 1 &&
-            grid[next.columnIndex + 1][next.rowIndex] === null
-         ) {
+         // if theres a patch east of us, we're not on the far right column, and the patch to our right isn't in our grid yet..
+         if (next.patch.eastPatchId && surroundingPatches.eastPatch === null) {
             eastPatchAwaited = getPatch(next.patch.eastPatchId);
          }
-         // if theres a patch west of us, we're not in the first column, and the patch to our left isnt in our grid yet...
-         if (next.patch.westPatchId && next.columnIndex > 0 && grid[next.columnIndex - 1][next.rowIndex] === null) {
+         // if theres a patch west of us, we're not in the first column, and the patch to our left isn't in our grid yet..
+         if (next.patch.westPatchId && surroundingPatches.westPatch === null) {
             westPatchAwaited = getPatch(next.patch.westPatchId);
          }
 
@@ -105,21 +170,23 @@ export function MainView() {
             grid[next.columnIndex - 1][next.rowIndex] = westPatch;
          }
 
-         // Only insert into your local cache if all the surrounding cells are completed
+         // Insert into the local cache if all the surrounding cells are completed
+         // The above logic is too strict to reuse here so we'll need to read into each cell individually
+         surroundingPatches = util_gridGetSurroundingPatches(grid, next.columnIndex, next.rowIndex); //Update surroundingPatches
          if (
-            northPatch &&
-            northPatch.objectStatus === 'ACT' &&
-            southPatch &&
-            southPatch.objectStatus === 'ACT' &&
-            eastPatch &&
-            eastPatch.objectStatus === 'ACT' &&
-            westPatch &&
-            westPatch.objectStatus === 'ACT'
+            surroundingPatches.northPatch &&
+            surroundingPatches.northPatch.objectStatus === 'ACT' &&
+            surroundingPatches.southPatch &&
+            surroundingPatches.southPatch.objectStatus === 'ACT' &&
+            surroundingPatches.eastPatch &&
+            surroundingPatches.eastPatch.objectStatus === 'ACT' &&
+            surroundingPatches.westPatch &&
+            surroundingPatches.westPatch.objectStatus === 'ACT'
          ) {
             await db_patch_insertSafe(next.patch);
          }
 
-         // Mark the current block as proccessed
+         // Flag the current patch as processed
          gridStatus[next.columnIndex][next.rowIndex] = true;
 
          // Grab the next Patch to be processed
@@ -127,48 +194,27 @@ export function MainView() {
       }
    };
 
-   let initialLoad = async () => {
-      if (!dbIsInitialized) {
-         // only needed because of HMR, if this is a prod build we can pull it out
-         db_init();
-         setDbIsInitialized(true);
+   let checkForFullImages = async () => {
+      let result = util_gridFirstOrDefault(fullGrid, patch => patch && !patch.__fullImageLoaded && patch.objectStatus === 'ACT');
+      let patchMissingFullImage = result && result.patch;
+      if (patchMissingFullImage) {
+         let image = await getPatchImage(patchMissingFullImage.patchId);
+         util_patchApplyFullImage(patchMissingFullImage, image);
+
+         setFullGrid([...fullGrid]);
       }
-      // Initial load
-      // Make a request for the first item
-      let resp = await axios.get('/api/Patch');
-      let initialPatch = resp.data;
-      let buttonBuffer = 2 * buttonSize;
-      let navBuffer = 100; //hard code just for POC
-      let gridColumns = Math.floor((window.innerWidth - buttonBuffer) / imageSize);
-      let gridRows = Math.floor((window.innerHeight - buttonBuffer - navBuffer) / imageSize);
-      setColumns(gridColumns);
-      setRows(gridRows);
-
-      // Initialize an empty grid and gridStatus
-      let grid = util_gridInitialize(gridColumns, gridRows, null);
-      let gridStatus = util_gridInitialize(gridColumns, gridRows, false);
-
-      let gridColumnIndex;
-      let gridRowIndex;
-      if (!initialPatch.northPatchId) {
-         gridColumnIndex = Math.floor(gridColumns / 2);
-         gridRowIndex = gridRows > 1 ? 1 : 0;
-      } //TODO the rest of these..
-
-      grid[gridColumnIndex][gridRowIndex] = util_patchDecorate(initialPatch);
-
-      setMainAreaHeight(window.innerHeight - document.getElementById('nav').offsetHeight);
-
-      // fill in the rest of the grid..
-      await fillGrid(grid, gridStatus);
-      setFullGrid(grid);
-      setFullGridStatus(gridStatus);
    };
-
    useEffect(() => {
-      initialLoad();
-   }, []);
+      if (fullGrid) {
+         console.log('grid updated');
+         util_debugGrid(fullGrid);
 
+         // recursive loop to check for and apply full images to our patches
+         checkForFullImages();
+      }
+   }, [fullGrid]);
+
+   //// User interaction / onClick bindings \\\\
    let patchClick = (patch, columnIndex, rowIndex) => {
       //TODO, all of it
       console.log({ patch, columnIndex, rowIndex });
@@ -180,7 +226,7 @@ export function MainView() {
          case 'up':
             grid = util_gridShiftUp(fullGrid, null);
             gridStatus = util_gridShiftUp(fullGridStatus, false);
-            gridStatus = util_gridFillRow(gridStatus, false);
+            gridStatus = util_gridFillRow(gridStatus, 1, false);
             break;
          case 'down':
             grid = util_gridShiftDown(fullGrid, null);
@@ -205,74 +251,68 @@ export function MainView() {
       setFullGridStatus([...gridStatus]);
    };
 
-   // TODO consider just folding this into the useEffect below
-   let checkForFullImages = async () => {
-      let result = util_gridFirstOrDefault(fullGrid, patch => patch && !patch.__fullImageLoaded);
-      let patchMissingFullImage = result && result.patch;
-      if (patchMissingFullImage) {
-         let image = await getPatchImage(patchMissingFullImage.patchId);
-         util_patchDecorate(patchMissingFullImage, image);
-
-         setFullGrid([...fullGrid]);
-      }
-   };
-
-   useEffect(() => {
-      if (fullGrid) {
-         console.log('grid updated');
-         util_debugGrid(fullGrid);
-         checkForFullImages();
-      }
-   }, [fullGrid]);
-
-   const gridContainer = {
+   //// Dynamic CSS styling \\\\
+   const cssGridContainer = {
       display: 'grid',
       gridTemplateColumns: `${buttonSize}px ${imageSize * columns}px ${buttonSize}px`,
       gridTemplateRows: `${buttonSize}px ${imageSize * rows}px ${buttonSize}px`,
    };
 
-   const alignCenter = {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
+   let gridLocationIsClickable = (columnIndex, rowIndex) => {
+      // we should be over an empty patch
+      if (fullGrid[columnIndex][rowIndex]) return false;
+
+      // There should be at least one filled patch in some direction
+      let surroundingPatches = util_gridGetSurroundingPatches(fullGrid, columnIndex, rowIndex);
+      return (
+         (surroundingPatches.northPatch && surroundingPatches.northPatch.objectStatus === 'ACT') ||
+         (surroundingPatches.southPatch && surroundingPatches.southPatch.objectStatus === 'ACT') ||
+         (surroundingPatches.eastPatch && surroundingPatches.eastPatch.objectStatus === 'ACT') ||
+         (surroundingPatches.westPatch && surroundingPatches.westPatch.objectStatus === 'ACT')
+      );
    };
 
    return (
       <div>
-         <div style={{ height: mainAreaHeight + 'px', ...alignCenter }}>
-            <div style={gridContainer}>
-               <div
-                  style={{ gridColumnStart: 2, gridColumnEnd: 3, gridRowStart: 1, gridRowEnd: 2, ...alignCenter }}
+         <div className="align-center" style={{ height: mainAreaHeight + 'px' }}>
+            <div style={cssGridContainer}>
+               <button
+                  className="button-up alignCenter"
+                  style={{ gridColumnStart: 2, gridColumnEnd: 3, gridRowStart: 1, gridRowEnd: 2 }}
                   onClick={() => moveGrid('up')}>
                   <FontAwesomeIcon icon={faAngleDoubleUp} />
-               </div>
-               <div
-                  style={{ gridColumnStart: 2, gridColumnEnd: 3, gridRowStart: 3, gridRowEnd: 4, ...alignCenter }}
+               </button>
+               <button
+                  className="button-down alignCenter"
+                  style={{ gridColumnStart: 2, gridColumnEnd: 3, gridRowStart: 3, gridRowEnd: 4 }}
                   onClick={() => moveGrid('down')}>
                   <FontAwesomeIcon icon={faAngleDoubleDown} />
-               </div>
-               <div
-                  style={{ gridColumnStart: 1, gridColumnEnd: 2, gridRowStart: 2, gridRowEnd: 3, ...alignCenter }}
+               </button>
+               <button
+                  className="button-left alignCenter"
+                  style={{ gridColumnStart: 1, gridColumnEnd: 2, gridRowStart: 2, gridRowEnd: 3 }}
                   onClick={() => moveGrid('left')}>
                   <FontAwesomeIcon icon={faAngleDoubleLeft} />
-               </div>
-               <div
-                  style={{ gridColumnStart: 3, gridColumnEnd: 4, gridRowStart: 2, gridRowEnd: 3, ...alignCenter }}
+               </button>
+               <button
+                  className="button-right alignCenter"
+                  style={{ gridColumnStart: 3, gridColumnEnd: 4, gridRowStart: 2, gridRowEnd: 3 }}
                   onClick={() => moveGrid('right')}>
                   <FontAwesomeIcon icon={faAngleDoubleRight} />
-               </div>
+               </button>
 
-               {/* here down is our working grid based on flexbox dont touch! (TODO consider transition into css grid, would have to be pretty dynamicly built though) */}
-               <div style={{ display: 'flex', gridColumnStart: 2, gridColumnEnd: 3, gridRowStart: 2, gridRowEnd: 3 }}>
+               <div className="grid-flexbox-container" style={{ gridColumnStart: 2, gridColumnEnd: 3, gridRowStart: 2, gridRowEnd: 3 }}>
                   {fullGrid &&
                      fullGrid.map((column, i) => {
                         return (
-                           <div style={{ display: 'flex', flexDirection: 'column' }}>
-                              {column.map((row, j) => (
+                           <div className="column-container" key={column.map(item => item && item.patchId).join() + '-' + i}>
+                              {column.map((patch, j) => (
                                  <img
-                                    src={row ? row.__src : 'https://via.placeholder.com/200'}
-                                    style={{ width: '200px', height: '200px' }}
-                                    onClick={() => patchClick(row, i, j)}
+                                    className={gridLocationIsClickable(i, j) ? 'patch-clickable' : ''}
+                                    key={patch ? patch.patchId : `emptyPatch${i}-${j}`}
+                                    src={patch ? patch.__src : placeholderImageCheckers}
+                                    style={{ width: imageSize + 'px', height: imageSize + 'px' }}
+                                    onClick={() => patchClick(patch, i, j)}
                                  />
                               ))}
                            </div>

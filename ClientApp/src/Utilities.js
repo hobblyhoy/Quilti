@@ -1,4 +1,7 @@
+///////// Grid Utilities \\\\\\\\\\\
 export function util_gridInitialize(columns, rows, defaultValue) {
+   if (arguments.length !== 3) throw 'invalid args';
+
    let grid = [];
    for (let i = 0; i < columns; i++) {
       let row = [];
@@ -12,14 +15,28 @@ export function util_gridInitialize(columns, rows, defaultValue) {
 }
 
 export function util_gridColumnCount(grid) {
+   if (arguments.length !== 1) throw 'invalid args';
+
    return grid.length;
 }
 
 export function util_gridRowCount(grid) {
+   if (arguments.length !== 1) throw 'invalid args';
+
    return grid[0].length;
 }
 
+export function util_gridIsValid(grid) {
+   let columns = util_gridColumnCount(grid);
+   let rows = util_gridRowCount(grid);
+
+   return columns > 0 && rows > 0;
+}
+
 export function util_gridShiftUp(grid, defaultValue) {
+   if (arguments.length !== 2) throw 'invalid args';
+   if (!util_gridIsValid(grid)) throw 'invalid grid';
+
    let columnCount = util_gridColumnCount(grid);
    for (let i = 0; i < columnCount; i++) {
       grid[i].unshift(defaultValue);
@@ -29,6 +46,9 @@ export function util_gridShiftUp(grid, defaultValue) {
 }
 
 export function util_gridShiftDown(grid, defaultValue) {
+   if (arguments.length !== 2) throw 'invalid args';
+   if (!util_gridIsValid(grid)) throw 'invalid grid';
+
    let columnCount = util_gridColumnCount(grid);
    for (let i = 0; i < columnCount; i++) {
       grid[i].shift();
@@ -38,6 +58,9 @@ export function util_gridShiftDown(grid, defaultValue) {
 }
 
 export function util_gridShiftLeft(grid, defaultValue) {
+   if (arguments.length !== 2) throw 'invalid args';
+   if (!util_gridIsValid(grid)) throw 'invalid grid';
+
    let newColumn = [];
    let rowCount = util_gridRowCount(grid);
    for (let i = 0; i < rowCount; i++) {
@@ -51,6 +74,9 @@ export function util_gridShiftLeft(grid, defaultValue) {
 }
 
 export function util_gridShiftRight(grid, defaultValue) {
+   if (arguments.length !== 2) throw 'invalid args';
+   if (!util_gridIsValid(grid)) throw 'invalid grid';
+
    let newColumn = [];
    let rowCount = util_gridRowCount(grid);
    for (let i = 0; i < rowCount; i++) {
@@ -67,6 +93,10 @@ export function util_gridShiftRight(grid, defaultValue) {
 // newly inserted one so they can be processed again to find their
 // new neighbors
 export function util_gridFillColumn(grid, columnIndex, defaultValue) {
+   if (arguments.length !== 3) throw 'invalid args';
+   if (columnIndex < 0 || columnIndex > util_gridColumnCount(grid) - 1) throw 'invalid args';
+   if (!util_gridIsValid(grid)) throw 'invalid grid';
+
    let rowCount = util_gridRowCount(grid);
    for (let i = 0; i < rowCount; i++) {
       grid[columnIndex][i] = defaultValue;
@@ -76,6 +106,10 @@ export function util_gridFillColumn(grid, columnIndex, defaultValue) {
 }
 
 export function util_gridFillRow(grid, rowIndex, defaultValue) {
+   if (arguments.length !== 3) throw 'invalid args';
+   if (rowIndex < 0 || rowIndex > util_gridRowCount(grid) - 1) throw 'invalid args';
+   if (!util_gridIsValid(grid)) throw 'invalid grid';
+
    let columnCount = util_gridColumnCount(grid);
    for (let i = 0; i < columnCount; i++) {
       grid[i][rowIndex] = defaultValue;
@@ -85,6 +119,9 @@ export function util_gridFillRow(grid, rowIndex, defaultValue) {
 }
 
 export function util_gridFirstOrDefault(grid, predicate) {
+   if (arguments.length !== 2) throw 'invalid args';
+   if (!util_gridIsValid(grid)) throw 'invalid grid';
+
    let columnCount = util_gridColumnCount(grid);
    let rowCount = util_gridRowCount(grid);
    for (let i = 0; i < columnCount; i++) {
@@ -94,6 +131,22 @@ export function util_gridFirstOrDefault(grid, predicate) {
          }
       }
    }
+}
+
+// Patches outside our current grid area will return undefined
+// Otherwise we return whatever is located in that position relative to the provided coordinates
+// For empty patches within our bounds this should be null
+export function util_gridGetSurroundingPatches(grid, columnIndex, rowIndex) {
+   if (arguments.length !== 3) throw 'invalid args';
+   if (!util_gridIsValid(grid)) throw 'invalid grid';
+
+   let ret = { northPatch: undefined, southPatch: undefined, eastPatch: undefined, westPatch: undefined };
+   if (rowIndex > 0) ret.northPatch = grid[columnIndex][rowIndex - 1];
+   if (rowIndex < util_gridRowCount(grid) - 1) ret.southPatch = grid[columnIndex][rowIndex + 1];
+   if (columnIndex < util_gridColumnCount(grid) - 1) ret.eastPatch = grid[columnIndex + 1][rowIndex];
+   if (columnIndex > 0) ret.westPatch = grid[columnIndex - 1][rowIndex];
+
+   return ret;
 }
 
 export function util_debugGrid(grid) {
@@ -115,13 +168,26 @@ export function util_debugGrid(grid) {
    console.table(transpose(idsOnlyGrid));
 }
 
-export function util_patchDecorate(patch, image) {
-   if (image && image.length > 0) {
-      patch.__src = image;
-      patch.__fullImageLoaded = true;
-   } else {
-      patch.__src = patch.imageMini;
-      patch.__fullImageLoaded = false;
-   }
+///////// Patch Utilities \\\\\\\\\\\
+export function util_patchIsValid(patch) {
+   return !!patch.patchId;
+}
+
+export function util_patchDecorate(patch) {
+   if (arguments.length !== 1) throw 'invalid args';
+   if (!util_patchIsValid(patch)) throw 'invalid args';
+
+   patch.__src = patch.imageMini;
+   patch.__fullImageLoaded = false;
+   return patch;
+}
+
+export function util_patchApplyFullImage(patch, image) {
+   if (arguments.length !== 2) throw 'invalid args';
+   if (!image || typeof image !== 'string' || image.length === 0) throw 'invalid args';
+
+   patch.__src = image;
+   patch.__fullImageLoaded = true;
+
    return patch;
 }
