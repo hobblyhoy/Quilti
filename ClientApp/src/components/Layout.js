@@ -4,7 +4,7 @@ import { NavMenu } from './NavMenu';
 export function Layout(props) {
    return (
       <div>
-         <NavMenu />
+         {/* <NavMenu /> */}
          <div>{props.children}</div>
       </div>
    );

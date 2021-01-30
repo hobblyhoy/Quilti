@@ -17,11 +17,20 @@ import {
    util_gridGetSurroundingPatches,
 } from '../Utilities';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faAngleDoubleUp, faAngleDoubleDown, faAngleDoubleLeft, faAngleDoubleRight } from '@fortawesome/free-solid-svg-icons';
+import {
+   faAngleDoubleUp,
+   faAngleDoubleDown,
+   faAngleDoubleLeft,
+   faAngleDoubleRight,
+   faPlus,
+   faMinus,
+} from '@fortawesome/free-solid-svg-icons';
 import { db_init, db_patch_get, db_patch_insertSafe, db_patchImage_get, db_patchImage_insertSafe } from '../DB';
 import placeholderImageCheckers from '../assets/checkers2.png';
 import placeholderImageReserved from '../assets/reserved.png';
 import './MainView.css';
+import { NavMenu } from './NavMenu';
+import { NavItem, NavLink } from 'reactstrap';
 
 export function MainView() {
    const [fullGrid, setFullGrid] = useState(null);
@@ -251,6 +260,17 @@ export function MainView() {
       setFullGridStatus([...gridStatus]);
    };
 
+   let imageSizeAdjust = delta => {
+      // TODO Get current centermost patch
+      // TODO if not found try for one of the surrounding patches
+      // TODO fall back to the first available patch in our grid
+
+      // clear the current grid
+      // assign our found patch to
+      setImageSize(imageSize => imageSize + delta);
+      console.log(delta);
+   };
+
    //// Dynamic CSS styling \\\\
    const cssGridContainer = {
       display: 'grid',
@@ -274,6 +294,18 @@ export function MainView() {
 
    return (
       <div>
+         <NavMenu>
+            <NavItem>
+               <NavLink href="#" className="text-dark" onClick={() => imageSizeAdjust(50)}>
+                  <FontAwesomeIcon icon={faPlus} />
+               </NavLink>
+            </NavItem>
+            <NavItem>
+               <NavLink href="#" className="text-dark" onClick={() => imageSizeAdjust(-50)}>
+                  <FontAwesomeIcon icon={faMinus} />
+               </NavLink>
+            </NavItem>
+         </NavMenu>
          <div className="align-center" style={{ height: mainAreaHeight + 'px' }}>
             <div style={cssGridContainer}>
                <button

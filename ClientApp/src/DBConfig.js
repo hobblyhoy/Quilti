@@ -1,5 +1,5 @@
 ﻿export const DBConfig = {
-   name: 'MyDB',
+   name: 'QuiltiDb',
    version: 1,
    objectStoresMeta: [
       {
