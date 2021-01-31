@@ -27,20 +27,25 @@ namespace Quilti.Controllers
         }
 
         [HttpGet]
-        public async Task<Patch> Get()
+        public async Task<PatchGetRequestDto> Get()
         {
             // With no ID provided we're just seeking out the next logical block to return as a starting point
-            var startingPatch = _context.Patches.First(p =>
-                    p.ObjectStatus == ObjectStatus.Active
-                    && (p.NorthPatchId == null || p.EastPatchId == null || p.SouthPatchId == null || p.WestPatchId == null));
-
-            return startingPatch;
+            return new PatchGetRequestDto(PatchManager.GetNextAvailablePatch(_context));
         }
 
         [HttpGet("{patchId}")]
         public async Task<PatchGetRequestDto> Get(int patchId)
         {
             return new PatchGetRequestDto(PatchManager.GetPatch(_context, _cache, patchId));
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<PatchGetRequestDto>> Post(PatchPostReserveDto patchPostReserveDto)
+        {
+            var creatorIp = HttpContext.Connection.RemoteIpAddress.ToString();
+            if (PatchManager.UserHasHitCreateCap(_context, creatorIp)) return Forbid();
+
+            return new PatchGetRequestDto(PatchManager.ReservePatch(_context, _cache, patchPostReserveDto));
         }
 
 
@@ -100,8 +105,8 @@ namespace Quilti.Controllers
             return newPatch;
         }
 
-        [HttpPost]
-        public async Task<Patch> Post(PatchRequest patchRequest)
+
+        public async Task<Patch> OldPostForTesting(PatchRequest patchRequest)
         {
             var creatorIp = HttpContext.Connection.RemoteIpAddress.ToString();
 

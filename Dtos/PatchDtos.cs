@@ -34,4 +34,13 @@ namespace Quilti.Dtos
             this.ObjectStatus = patch.ObjectStatus;
         }
     }
+
+    public class PatchPostReserveDto
+    {
+        public int? NorthPatchId { get; set; }
+        public int? SouthPatchId { get; set; }
+        public int? EastPatchId { get; set; }
+        public int? WestPatchId { get; set; }
+
+    }
 }

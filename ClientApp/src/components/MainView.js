@@ -257,9 +257,14 @@ export function MainView() {
    }, [fullGrid]);
 
    //// User interaction / onClick bindings \\\\
-   let patchClick = (patch, columnIndex, rowIndex) => {
+   let patchClick = async (patch, columnIndex, rowIndex) => {
       //TODO, all of it
       console.log({ patch, columnIndex, rowIndex });
+
+      //test post
+      let toSend = { northPatchId: 1, southPatchId: 2, eastPatchId: 3, westPatchId: 4 };
+      let resp = await axios.post('/api/Patch', toSend);
+      console.log({ resp });
    };
 
    let moveGrid = async direction => {
