@@ -15,6 +15,8 @@ import {
    util_patchDecorate,
    util_patchApplyFullImage,
    util_gridGetSurroundingPatches,
+   util_gridFindNearestPatch,
+   util_calculateAllowableGridRoom,
 } from '../Utilities';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -27,20 +29,23 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { db_init, db_patch_get, db_patch_insertSafe, db_patchImage_get, db_patchImage_insertSafe } from '../DB';
 import placeholderImageCheckers from '../assets/checkers2.png';
-import placeholderImageReserved from '../assets/reserved.png';
+import placeholderImageReserved from '../assets/reserved.js';
 import './MainView.css';
 import { NavMenu } from './NavMenu';
 import { NavItem, NavLink } from 'reactstrap';
+import { useParams } from 'react-router-dom';
 
 export function MainView() {
    const [fullGrid, setFullGrid] = useState(null);
    const [fullGridStatus, setFullGridStatus] = useState(null);
    const [columns, setColumns] = useState(0);
    const [rows, setRows] = useState(0);
-   const [imageSize, setImageSize] = useState(150);
+   const [imageSize, setImageSize] = useState(200);
    const [buttonSize, setButtonSize] = useState(30);
    const [mainAreaHeight, setMainAreaHeight] = useState(1);
    const [dbIsInitialized, setDbIsInitialized] = useState(false);
+   const [initialPatch, setInitialPatch] = useState(null); // patch with coordinates object
+   const { patchIdParam } = useParams();
 
    //// Primary object getters \\\\
    let getPatch = async patchId => {
@@ -82,38 +87,65 @@ export function MainView() {
       }
       // Initial load
       // Make a request for the first item
-      let resp = await axios.get('/api/Patch');
-      let initialPatch = resp.data;
-      let buttonBuffer = 2 * buttonSize;
-      let navBuffer = 100; //hard code just for POC
-      let gridColumns = Math.floor((window.innerWidth - buttonBuffer) / imageSize);
-      let gridRows = Math.floor((window.innerHeight - buttonBuffer - navBuffer) / imageSize);
-      setColumns(gridColumns);
-      setRows(gridRows);
+      let resp = await axios.get('/api/Patch/' + (patchIdParam ? patchIdParam : ''));
+      setInitialPatch({ patch: resp.data, columnIndex: null, rowIndex: null });
+   };
+   useEffect(() => {
+      initialLoad();
+   }, []);
+
+   let initialPatchSetCallback = async () => {
+      console.log('calculating grid based on image size...' + imageSize);
+      // let buttonBuffer = 2 * buttonSize;
+      // let navBuffer = document.getElementById('nav').offsetHeight;
+      // let gridRoomWidth = window.innerWidth - buttonBuffer;
+      // let gridRoomHeight = window.innerHeight - buttonBuffer - navBuffer;
+      // if (gridRoomWidth < 100 || gridRoomHeight < 100) {
+      //    throw 'oops, not enough room for the grid!';
+      // }
+      // let imageSizeTemp = imageSize;
+      // let gridColumns = Math.floor(gridRoomWidth / imageSizeTemp);
+      // let gridRows = Math.floor(gridRoomHeight / imageSizeTemp);
+
+      let allowableGridRoom = util_calculateAllowableGridRoom(buttonSize, imageSize);
+      let imageSizeTemp = imageSize;
+      // If the current dimensions are too small to support a 2x2 grid, make the images smaller until it does
+      while (allowableGridRoom.gridColumns < 2 || allowableGridRoom.gridRows < 2) {
+         imageSizeTemp = imageSizeTemp / 2;
+         allowableGridRoom = util_calculateAllowableGridRoom(buttonSize, imageSizeTemp);
+      }
+      if (imageSize !== imageSizeTemp) setImageSize(imageSizeTemp);
+
+      setColumns(allowableGridRoom.gridColumns);
+      setRows(allowableGridRoom.gridRows);
 
       // Initialize an empty grid and gridStatus
-      let grid = util_gridInitialize(gridColumns, gridRows, null);
-      let gridStatus = util_gridInitialize(gridColumns, gridRows, false);
+      let grid = util_gridInitialize(allowableGridRoom.gridColumns, allowableGridRoom.gridRows, null);
+      let gridStatus = util_gridInitialize(allowableGridRoom.gridColumns, allowableGridRoom.gridRows, false);
 
-      // Our initial patch will always be missing at least one of north/south/east/west directions
+      // Our initial patch from api will always be missing at least one of north/south/east/west directions
       // we need to figure out which it is and strategically position it in the grid to be conducive for adding onto the quilt
+      // otherwise it's from the image resize and we just stick it in the center
       let gridColumnIndex;
       let gridRowIndex;
-      if (!initialPatch.northPatchId) {
-         gridColumnIndex = Math.floor(gridColumns / 2);
+      if (initialPatch.columnIndex && initialPatch.rowIndex) {
+         gridColumnIndex = Math.floor(allowableGridRoom.gridColumns / 2);
+         gridRowIndex = Math.floor(allowableGridRoom.gridRows / 2);
+      } else if (!initialPatch.patch.northPatchId) {
+         gridColumnIndex = Math.floor(allowableGridRoom.gridColumns / 2);
          gridRowIndex = 1;
-      } else if (!initialPatch.southPatchId) {
-         gridColumnIndex = Math.floor(gridColumns / 2);
-         gridRowIndex = gridRows - 2;
-      } else if (!initialPatch.eastPatch) {
+      } else if (!initialPatch.patch.southPatchId) {
+         gridColumnIndex = Math.floor(allowableGridRoom.gridColumns / 2);
+         gridRowIndex = allowableGridRoom.gridRows - 2;
+      } else if (!initialPatch.patch.eastPatch) {
          gridColumnIndex = 1;
-         gridRowIndex = Math.floor(gridRows) / 2;
-      } else if (!initialPatch.westPatch) {
-         gridColumnIndex = gridColumns - 2;
+         gridRowIndex = Math.floor(allowableGridRoom.gridRows) / 2;
+      } else if (!initialPatch.patch.westPatch) {
+         gridColumnIndex = allowableGridRoom.gridColumns - 2;
          gridRowIndex = Math.floor(gridRowIndex) / 2;
       }
 
-      grid[gridColumnIndex][gridRowIndex] = util_patchDecorate(initialPatch);
+      grid[gridColumnIndex][gridRowIndex] = util_patchDecorate(initialPatch.patch);
 
       setMainAreaHeight(window.innerHeight - document.getElementById('nav').offsetHeight);
 
@@ -123,8 +155,9 @@ export function MainView() {
       setFullGridStatus(gridStatus);
    };
    useEffect(() => {
-      initialLoad();
-   }, []);
+      console.log('initialPatch useEffect');
+      if (initialPatch) initialPatchSetCallback();
+   }, [initialPatch]);
 
    //// Main and support functions for filling the grid \\\\
    let nextUnprocessedPatch = async (grid, gridStatus) => {
@@ -260,15 +293,23 @@ export function MainView() {
       setFullGridStatus([...gridStatus]);
    };
 
-   let imageSizeAdjust = delta => {
-      // TODO Get current centermost patch
-      // TODO if not found try for one of the surrounding patches
-      // TODO fall back to the first available patch in our grid
+   let imageSizeAdjust = factor => {
+      // Ensure we're not beyond our fixed min/max and that we have room for this size grid
+      let newImageSize = factor > 0 ? imageSize * 2 : imageSize / 2;
+      if (newImageSize < 50 || newImageSize > 800) return;
+      let allowableGridRoom = util_calculateAllowableGridRoom(buttonSize, newImageSize);
+      if (allowableGridRoom.gridColumns < 2 || allowableGridRoom.gridRows < 2) return;
 
-      // clear the current grid
-      // assign our found patch to
-      setImageSize(imageSize => imageSize + delta);
-      console.log(delta);
+      // Get current center-most patch
+      let columnIndex = Math.floor(util_gridColumnCount(fullGrid) / 2);
+      let rowIndex = Math.floor(util_gridRowCount(fullGrid) / 2);
+
+      // Start from the center and spiral outward to find closest patch to center
+      let newInitialPatch = util_gridFindNearestPatch(fullGrid, columnIndex, rowIndex, patch => patch && patch.objectStatus === 'ACT');
+
+      console.log('Changing image size from, to...', imageSize, newImageSize);
+      setImageSize(newImageSize);
+      setInitialPatch(newInitialPatch);
    };
 
    //// Dynamic CSS styling \\\\
@@ -276,6 +317,12 @@ export function MainView() {
       display: 'grid',
       gridTemplateColumns: `${buttonSize}px ${imageSize * columns}px ${buttonSize}px`,
       gridTemplateRows: `${buttonSize}px ${imageSize * rows}px ${buttonSize}px`,
+   };
+
+   const fullGridContainer = {
+      display: 'flex',
+      width: fullGrid ? imageSize * util_gridColumnCount(fullGrid) : 0,
+      height: fullGrid ? imageSize * util_gridRowCount(fullGrid) : 0,
    };
 
    let gridLocationIsClickable = (columnIndex, rowIndex) => {
@@ -296,12 +343,12 @@ export function MainView() {
       <div>
          <NavMenu>
             <NavItem>
-               <NavLink href="#" className="text-dark" onClick={() => imageSizeAdjust(50)}>
+               <NavLink href="#" className="text-dark" onClick={() => imageSizeAdjust(1)}>
                   <FontAwesomeIcon icon={faPlus} />
                </NavLink>
             </NavItem>
             <NavItem>
-               <NavLink href="#" className="text-dark" onClick={() => imageSizeAdjust(-50)}>
+               <NavLink href="#" className="text-dark" onClick={() => imageSizeAdjust(-1)}>
                   <FontAwesomeIcon icon={faMinus} />
                </NavLink>
             </NavItem>
@@ -333,7 +380,7 @@ export function MainView() {
                   <FontAwesomeIcon icon={faAngleDoubleRight} />
                </button>
 
-               <div className="grid-flexbox-container" style={{ gridColumnStart: 2, gridColumnEnd: 3, gridRowStart: 2, gridRowEnd: 3 }}>
+               <div style={{ gridColumnStart: 2, gridColumnEnd: 3, gridRowStart: 2, gridRowEnd: 3, ...fullGridContainer }}>
                   {fullGrid &&
                      fullGrid.map((column, i) => {
                         return (

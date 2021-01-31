@@ -13,8 +13,8 @@ export default function App() {
    return (
       <Layout>
          <Route exact path="/" component={MainView} />
-         <Route path="/view/:patchId" component={MainView} />
-         <Route path="/draw/:patchId" component={MainDraw} />
+         <Route path="/view/:patchIdParam" component={MainView} />
+         <Route path="/draw/:patchIdParam" component={MainDraw} />
 
          <Route path="/counter" component={Counter} />
          <Route path="/fetch-data" component={FetchData} />

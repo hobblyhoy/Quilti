@@ -4,10 +4,6 @@
    justify-content: center;
 }
 
-.grid-flexbox-container {
-   display: flex;
-}
-
 .column-container {
    display: flex;
    flex-direction: column;
@@ -15,7 +11,7 @@
 
 .patch-clickable {
    cursor: pointer;
-   transition: all ease 500ms;
+   transition: transform ease 500ms;
 }
 .patch-clickable:hover {
    transform: scale(1.1);
