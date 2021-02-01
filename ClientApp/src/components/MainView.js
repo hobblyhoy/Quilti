@@ -1,22 +1,11 @@
-﻿import axios from 'axios';
 import React, { useEffect, useState } from 'react';
 import {
-   util_gridInitialize,
-   util_gridShiftLeft,
-   util_debugGrid,
-   util_gridFillColumn,
-   util_gridShiftRight,
-   util_gridColumnCount,
-   util_gridShiftUp,
-   util_gridFillRow,
-   util_gridShiftDown,
-   util_gridRowCount,
-   util_gridFirstOrDefault,
-   util_patchDecorate,
-   util_patchApplyFullImage,
-   util_gridGetSurroundingPatches,
-   util_gridFindNearestPatch,
    util_calculateAllowableGridRoom,
+   util_debugGrid,
+   util_gridColumnCount,
+   util_gridRowCount,
+   util_gridInitialize,
+   util_gridFirstOrDefault,
 } from '../Utilities';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -26,302 +15,194 @@ import {
    faAngleDoubleRight,
    faPlus,
    faMinus,
+   faSpinner,
 } from '@fortawesome/free-solid-svg-icons';
-import { db_init, db_patch_get, db_patch_insertSafe, db_patchImage_get, db_patchImage_insertSafe } from '../DB';
-import placeholderImageCheckers from '../assets/checkers2.png';
+import { db_init, db_patch_get } from '../DB';
+import placeholderImageCheckers from '../assets/checkers.js';
 import placeholderImageReserved from '../assets/reserved.js';
 import './MainView.css';
 import { NavMenu } from './NavMenu';
 import { NavItem, NavLink } from 'reactstrap';
 import { useParams } from 'react-router-dom';
+import { api_getInitialPatchDec, api_getPatchDec, api_getPatchIdsInRange, api_getPatchImage } from '../API';
 
 export function MainView() {
-   const [fullGrid, setFullGrid] = useState(null);
-   const [fullGridStatus, setFullGridStatus] = useState(null);
-   const [columns, setColumns] = useState(0);
-   const [rows, setRows] = useState(0);
-   const [imageSize, setImageSize] = useState(200);
-   const [buttonSize, setButtonSize] = useState(30);
-   const [mainAreaHeight, setMainAreaHeight] = useState(1);
    const [dbIsInitialized, setDbIsInitialized] = useState(false);
-   const [initialPatch, setInitialPatch] = useState(null); // patch with coordinates object
+   const [imageSize, setImageSize] = useState(null);
+   const [fullGridCoordinates, setFullGridCoordinates] = useState(null);
+   const [fullGrid, setFullGrid] = useState(null);
    const { patchIdParam } = useParams();
+   // Layout aids
+   const [mainAreaHeight, setMainAreaHeight] = useState(1);
+   const [buttonSize, setButtonSize] = useState(30);
+   const [isLoading, setIsLoading] = useState(true);
 
-   //// Primary object getters \\\\
-   let getPatch = async patchId => {
-      let patch = await db_patch_get(patchId);
-      if (!patch) {
-         let resp = await axios.get('/api/Patch/' + patchId);
-         patch = resp.data;
-      }
+   //// Main process flow \\\\
+   // https://app.creately.com/diagram/XnWD2VGuOky/edit
+   // We daisy chain through stages 0 => 3, the tail of each kicking off the next, each stage dependant on the one before it.
+   // We break it into stages so that our user interaction can pipe in at key points and kick off just the remainder of the chain
 
-      util_patchDecorate(patch);
-
-      // IF this is a reserved patch, apply it's reserved image
-      if (patch.objectStatus === 'RES') util_patchApplyFullImage(patch, placeholderImageReserved);
-
-      // If we already have the full image in our local db, apply it now
-      let image = await db_patchImage_get(patchId);
-      if (image) util_patchApplyFullImage(patch, image);
-      return patch;
-   };
-
-   let getPatchImage = async patchId => {
-      let image = await db_patchImage_get(patchId);
-      if (!image) {
-         let resp = await axios.get('/api/PatchImage/' + patchId);
-         image = resp.data;
-
-         db_patchImage_insertSafe(patchId, image);
-      }
-
-      return image;
-   };
-
-   //// Initial Load \\\\
-   let initialLoad = async () => {
-      if (!dbIsInitialized) {
-         db_init();
-         // only needed because of HMR, if this is a prod build we can pull it out
-         setDbIsInitialized(true);
-      }
-      // Initial load
-      // Make a request for the first item
-      let resp = await axios.get('/api/Patch/' + (patchIdParam ? patchIdParam : ''));
-      setInitialPatch({ patch: resp.data, columnIndex: null, rowIndex: null });
-   };
+   // Stage 0 - Init \\
    useEffect(() => {
-      initialLoad();
+      (async () => {
+         console.log('init');
+         if (!dbIsInitialized) {
+            db_init();
+            // only needed because of HMR, if this is a prod build we can pull it out
+            setDbIsInitialized(true);
+         }
+
+         // Determine the suitable starting imageSize based on fitting a minimum of 2 rows/columns in users current screen
+         let imageSizeTemp = 400;
+         let gridColumns = 0;
+         let gridRows = 0;
+         while (gridColumns < 2 || gridRows < 2) {
+            imageSizeTemp = imageSizeTemp / 2;
+            ({ gridColumns, gridRows } = util_calculateAllowableGridRoom(buttonSize, imageSizeTemp, 100));
+         }
+         console.log({ gridColumns, gridRows });
+         setImageSize(imageSizeTemp);
+      })();
    }, []);
 
-   let initialPatchSetCallback = async () => {
-      console.log('calculating grid based on image size...' + imageSize);
-      // let buttonBuffer = 2 * buttonSize;
-      // let navBuffer = document.getElementById('nav').offsetHeight;
-      // let gridRoomWidth = window.innerWidth - buttonBuffer;
-      // let gridRoomHeight = window.innerHeight - buttonBuffer - navBuffer;
-      // if (gridRoomWidth < 100 || gridRoomHeight < 100) {
-      //    throw 'oops, not enough room for the grid!';
-      // }
-      // let imageSizeTemp = imageSize;
-      // let gridColumns = Math.floor(gridRoomWidth / imageSizeTemp);
-      // let gridRows = Math.floor(gridRoomHeight / imageSizeTemp);
-
-      let allowableGridRoom = util_calculateAllowableGridRoom(buttonSize, imageSize);
-      let imageSizeTemp = imageSize;
-      // If the current dimensions are too small to support a 2x2 grid, make the images smaller until it does
-      while (allowableGridRoom.gridColumns < 2 || allowableGridRoom.gridRows < 2) {
-         imageSizeTemp = imageSizeTemp / 2;
-         allowableGridRoom = util_calculateAllowableGridRoom(buttonSize, imageSizeTemp);
-      }
-      if (imageSize !== imageSizeTemp) setImageSize(imageSizeTemp);
-
-      setColumns(allowableGridRoom.gridColumns);
-      setRows(allowableGridRoom.gridRows);
-
-      // Initialize an empty grid and gridStatus
-      let grid = util_gridInitialize(allowableGridRoom.gridColumns, allowableGridRoom.gridRows, null);
-      let gridStatus = util_gridInitialize(allowableGridRoom.gridColumns, allowableGridRoom.gridRows, false);
-
-      // Our initial patch from api will always be missing at least one of north/south/east/west directions
-      // we need to figure out which it is and strategically position it in the grid to be conducive for adding onto the quilt
-      // otherwise it's from the image resize and we just stick it in the center
-      let gridColumnIndex;
-      let gridRowIndex;
-      if (initialPatch.columnIndex && initialPatch.rowIndex) {
-         gridColumnIndex = Math.floor(allowableGridRoom.gridColumns / 2);
-         gridRowIndex = Math.floor(allowableGridRoom.gridRows / 2);
-      } else if (!initialPatch.patch.northPatchId) {
-         gridColumnIndex = Math.floor(allowableGridRoom.gridColumns / 2);
-         gridRowIndex = 1;
-      } else if (!initialPatch.patch.southPatchId) {
-         gridColumnIndex = Math.floor(allowableGridRoom.gridColumns / 2);
-         gridRowIndex = allowableGridRoom.gridRows - 2;
-      } else if (!initialPatch.patch.eastPatch) {
-         gridColumnIndex = 1;
-         gridRowIndex = Math.floor(allowableGridRoom.gridRows) / 2;
-      } else if (!initialPatch.patch.westPatch) {
-         gridColumnIndex = allowableGridRoom.gridColumns - 2;
-         gridRowIndex = Math.floor(gridRowIndex) / 2;
-      }
-
-      grid[gridColumnIndex][gridRowIndex] = util_patchDecorate(initialPatch.patch);
-
-      setMainAreaHeight(window.innerHeight - document.getElementById('nav').offsetHeight);
-
-      // fill in the rest of the grid..
-      await fillGrid(grid, gridStatus);
-      setFullGrid(grid);
-      setFullGridStatus(gridStatus);
-   };
+   // Stage 1 - imageSize callback \\
    useEffect(() => {
-      console.log('initialPatch useEffect');
-      if (initialPatch) initialPatchSetCallback();
-   }, [initialPatch]);
+      if (!imageSize) return;
+      (async () => {
+         console.log('imageSizeCallback');
 
-   //// Main and support functions for filling the grid \\\\
-   let nextUnprocessedPatch = async (grid, gridStatus) => {
-      for (let i = 0; i < util_gridColumnCount(grid); i++) {
-         for (let j = 0; j < util_gridRowCount(grid); j++) {
-            if (grid[i][j] != null && gridStatus[i][j] == false) {
-               return { patch: grid[i][j], columnIndex: i, rowIndex: j };
-            }
-         }
-      }
-   };
+         setMainAreaHeight(window.innerHeight - document.getElementById('nav').offsetHeight);
 
-   let fillGrid = async (grid, gridStatus) => {
-      let next = await nextUnprocessedPatch(grid, gridStatus);
-      while (next) {
-         let surroundingPatches = util_gridGetSurroundingPatches(grid, next.columnIndex, next.rowIndex);
-
-         // if theres a patch north of us, we're not on the top row, and the item above us isn't in our grid yet..
-         //cannot be a simple !surroundingPatches.xxxxPatch check, we get undefined for patches outside our current grid
-         let northPatchAwaited, southPatchAwaited, eastPatchAwaited, westPatchAwaited;
-         let northPatch, southPatch, eastPatch, westPatch;
-         if (next.patch.northPatchId && surroundingPatches.northPatch === null) {
-            northPatchAwaited = getPatch(next.patch.northPatchId);
-         }
-         // if theres a patch south of us, we're not on the bottom row, and the item below isn't in our grid yet..
-         if (next.patch.southPatchId && surroundingPatches.southPatch === null) {
-            southPatchAwaited = getPatch(next.patch.southPatchId);
-         }
-         // if theres a patch east of us, we're not on the far right column, and the patch to our right isn't in our grid yet..
-         if (next.patch.eastPatchId && surroundingPatches.eastPatch === null) {
-            eastPatchAwaited = getPatch(next.patch.eastPatchId);
-         }
-         // if theres a patch west of us, we're not in the first column, and the patch to our left isn't in our grid yet..
-         if (next.patch.westPatchId && surroundingPatches.westPatch === null) {
-            westPatchAwaited = getPatch(next.patch.westPatchId);
+         let initialPatchDec;
+         if (patchIdParam) {
+            // coming in from /view/x page
+            initialPatchDec = await api_getPatchDec(patchIdParam);
+         } else if (fullGrid) {
+            // on user image size adjustment, grab the closest one to the center
+            let column = Math.floor(util_gridColumnCount(fullGrid) / 2);
+            let row = Math.floor(util_gridRowCount(fullGrid) / 2);
+            initialPatchDec = fullGrid[column][row];
+         } else {
+            // initial load
+            initialPatchDec = await api_getInitialPatchDec();
          }
 
-         if (northPatchAwaited) {
-            northPatch = await northPatchAwaited;
-            grid[next.columnIndex][next.rowIndex - 1] = northPatch;
-         }
-         if (southPatchAwaited) {
-            southPatch = await southPatchAwaited;
-            grid[next.columnIndex][next.rowIndex + 1] = southPatch;
-         }
-         if (eastPatchAwaited) {
-            eastPatch = await eastPatchAwaited;
-            grid[next.columnIndex + 1][next.rowIndex] = eastPatch;
-         }
-         if (westPatchAwaited) {
-            westPatch = await westPatchAwaited;
-            grid[next.columnIndex - 1][next.rowIndex] = westPatch;
-         }
+         // Figure out the size of our grid and the appropriate global coordinates
+         let { gridColumns, gridRows } = util_calculateAllowableGridRoom(buttonSize, imageSize, 100);
 
-         // Insert into the local cache if all the surrounding cells are completed
-         // The above logic is too strict to reuse here so we'll need to read into each cell individually
-         surroundingPatches = util_gridGetSurroundingPatches(grid, next.columnIndex, next.rowIndex); //Update surroundingPatches
-         if (
-            surroundingPatches.northPatch &&
-            surroundingPatches.northPatch.objectStatus === 'ACT' &&
-            surroundingPatches.southPatch &&
-            surroundingPatches.southPatch.objectStatus === 'ACT' &&
-            surroundingPatches.eastPatch &&
-            surroundingPatches.eastPatch.objectStatus === 'ACT' &&
-            surroundingPatches.westPatch &&
-            surroundingPatches.westPatch.objectStatus === 'ACT'
-         ) {
-            await db_patch_insertSafe(next.patch);
-         }
+         let leftX = initialPatchDec.x - Math.floor(gridColumns / 2);
+         let rightX = leftX + gridColumns - 1;
+         let topY = initialPatchDec.y + Math.floor(gridRows / 2);
+         let bottomY = topY - gridRows + 1;
+         setFullGridCoordinates({ leftX, rightX, topY, bottomY });
+      })();
+   }, [imageSize]);
 
-         // Flag the current patch as processed
-         gridStatus[next.columnIndex][next.rowIndex] = true;
-
-         // Grab the next Patch to be processed
-         next = await nextUnprocessedPatch(grid, gridStatus);
-      }
-   };
-
-   let checkForFullImages = async () => {
-      let result = util_gridFirstOrDefault(fullGrid, patch => patch && !patch.__fullImageLoaded && patch.objectStatus === 'ACT');
-      let patchMissingFullImage = result && result.patch;
-      if (patchMissingFullImage) {
-         let image = await getPatchImage(patchMissingFullImage.patchId);
-         util_patchApplyFullImage(patchMissingFullImage, image);
-
-         setFullGrid([...fullGrid]);
-      }
-   };
+   // Stage 2 - fullGridCoordinates Callback \\
    useEffect(() => {
-      if (fullGrid) {
-         console.log('grid updated');
-         util_debugGrid(fullGrid);
+      if (!fullGridCoordinates) return;
+      (async () => {
+         console.log('fullGridCoordinatesCallback');
 
-         // recursive loop to check for and apply full images to our patches
-         checkForFullImages();
-      }
+         let patchIdsInRangeAwaited = api_getPatchIdsInRange(
+            fullGridCoordinates.leftX,
+            fullGridCoordinates.rightX,
+            fullGridCoordinates.topY,
+            fullGridCoordinates.bottomY
+         );
+
+         let columnCount = fullGridCoordinates.rightX - fullGridCoordinates.leftX + 1;
+         let rowCount = fullGridCoordinates.topY - fullGridCoordinates.bottomY + 1;
+
+         // Build the empty grid
+         let grid = util_gridInitialize(columnCount, rowCount, fullGridCoordinates.leftX, fullGridCoordinates.topY);
+         util_debugGrid(grid);
+
+         // Finish waiting for the request to come back
+         let patchIdsInRange = await patchIdsInRangeAwaited;
+
+         // Fill in all the ones that we know contain something
+         await Promise.all(
+            patchIdsInRange.map(async patchId => {
+               //console.log('Starting to get patch...', patchId); //check for parallelism
+               let patchDecInGridMeta = util_gridFirstOrDefault(grid, p => p.patchId === patchId);
+               let patchDecFromApi = await api_getPatchDec(patchDecInGridMeta.patch.patchId);
+               grid[patchDecInGridMeta.columnIndex][patchDecInGridMeta.rowIndex] = patchDecFromApi;
+               //console.log('Finished setting patch...', patchId);
+            })
+         );
+
+         console.log('About to set fullGrid');
+         util_debugGrid(grid);
+         setFullGrid(grid);
+      })();
+   }, [fullGridCoordinates]);
+
+   // Stage 3 - fullGrid Callback \\
+   useEffect(() => {
+      if (!fullGrid) return;
+      (async () => {
+         setIsLoading(false);
+         let result = util_gridFirstOrDefault(fullGrid, patch => patch.status === 'partial');
+         let patchDecMissingFullImage = result && result.patch;
+         if (patchDecMissingFullImage) {
+            let image = await api_getPatchImage(patchDecMissingFullImage.patchId);
+            patchDecMissingFullImage.src = image;
+            patchDecMissingFullImage.status = 'full';
+            console.log('Updated full image on', patchDecMissingFullImage.patchId);
+            setFullGrid([...fullGrid]);
+
+            util_debugGrid(fullGrid);
+         }
+      })();
    }, [fullGrid]);
 
    //// User interaction / onClick bindings \\\\
-   let patchClick = async (patch, columnIndex, rowIndex) => {
-      //TODO, all of it
-      console.log({ patch, columnIndex, rowIndex });
-
-      //test post
-      let toSend = { northPatchId: 1, southPatchId: 2, eastPatchId: 3, westPatchId: 4 };
-      let resp = await axios.post('/api/Patch', toSend);
-      console.log({ resp });
+   let patchClick = patch => {
+      console.log('TODO');
+      console.log({ patch });
    };
 
-   let moveGrid = async direction => {
-      let grid, gridStatus;
-      switch (direction) {
-         case 'up':
-            grid = util_gridShiftUp(fullGrid, null);
-            gridStatus = util_gridShiftUp(fullGridStatus, false);
-            gridStatus = util_gridFillRow(gridStatus, 1, false);
-            break;
-         case 'down':
-            grid = util_gridShiftDown(fullGrid, null);
-            gridStatus = util_gridShiftDown(fullGridStatus, false);
-            gridStatus = util_gridFillRow(gridStatus, util_gridRowCount(grid) - 2, false);
-            break;
-         case 'left':
-            grid = util_gridShiftLeft(fullGrid, null);
-            gridStatus = util_gridShiftLeft(fullGridStatus, false);
-            gridStatus = util_gridFillColumn(gridStatus, 1, false);
-            break;
-         case 'right':
-            grid = util_gridShiftRight(fullGrid, null);
-            gridStatus = util_gridShiftRight(fullGridStatus, false);
-            gridStatus = util_gridFillColumn(gridStatus, util_gridColumnCount(grid) - 2, false);
-            break;
-      }
-
-      await fillGrid(grid, gridStatus);
-
-      setFullGrid([...grid]);
-      setFullGridStatus([...gridStatus]);
-   };
-
-   let imageSizeAdjust = factor => {
+   let imageSizeAdjustClick = factor => {
       // Ensure we're not beyond our fixed min/max and that we have room for this size grid
       let newImageSize = factor > 0 ? imageSize * 2 : imageSize / 2;
       if (newImageSize < 50 || newImageSize > 800) return;
-      let allowableGridRoom = util_calculateAllowableGridRoom(buttonSize, newImageSize);
+      let allowableGridRoom = util_calculateAllowableGridRoom(buttonSize, newImageSize, 100);
       if (allowableGridRoom.gridColumns < 2 || allowableGridRoom.gridRows < 2) return;
 
-      // Get current center-most patch
-      let columnIndex = Math.floor(util_gridColumnCount(fullGrid) / 2);
-      let rowIndex = Math.floor(util_gridRowCount(fullGrid) / 2);
-
-      // Start from the center and spiral outward to find closest patch to center
-      let newInitialPatch = util_gridFindNearestPatch(fullGrid, columnIndex, rowIndex, patch => patch && patch.objectStatus === 'ACT');
-
+      setIsLoading(true);
       console.log('Changing image size from, to...', imageSize, newImageSize);
       setImageSize(newImageSize);
-      setInitialPatch(newInitialPatch);
+   };
+
+   let moveGridClick = direction => {
+      let coordinates = { ...fullGridCoordinates };
+      switch (direction) {
+         case 'up':
+            coordinates.topY++;
+            coordinates.bottomY++;
+            break;
+         case 'down':
+            coordinates.topY--;
+            coordinates.bottomY--;
+            break;
+         case 'left':
+            coordinates.leftX--;
+            coordinates.rightX--;
+            break;
+         case 'right':
+            coordinates.leftX++;
+            coordinates.rightX++;
+            break;
+      }
+      setFullGridCoordinates(coordinates);
    };
 
    //// Dynamic CSS styling \\\\
    const cssGridContainer = {
       display: 'grid',
-      gridTemplateColumns: `${buttonSize}px ${imageSize * columns}px ${buttonSize}px`,
-      gridTemplateRows: `${buttonSize}px ${imageSize * rows}px ${buttonSize}px`,
+      gridTemplateColumns: fullGrid ? `${buttonSize}px ${imageSize * util_gridColumnCount(fullGrid)}px ${buttonSize}px` : '',
+      gridTemplateRows: fullGrid ? `${buttonSize}px ${imageSize * util_gridRowCount(fullGrid)}px ${buttonSize}px` : '',
    };
 
    const fullGridContainer = {
@@ -330,80 +211,73 @@ export function MainView() {
       height: fullGrid ? imageSize * util_gridRowCount(fullGrid) : 0,
    };
 
-   let gridLocationIsClickable = (columnIndex, rowIndex) => {
-      // we should be over an empty patch
-      if (fullGrid[columnIndex][rowIndex]) return false;
-
-      // There should be at least one filled patch in some direction
-      let surroundingPatches = util_gridGetSurroundingPatches(fullGrid, columnIndex, rowIndex);
-      return (
-         (surroundingPatches.northPatch && surroundingPatches.northPatch.objectStatus === 'ACT') ||
-         (surroundingPatches.southPatch && surroundingPatches.southPatch.objectStatus === 'ACT') ||
-         (surroundingPatches.eastPatch && surroundingPatches.eastPatch.objectStatus === 'ACT') ||
-         (surroundingPatches.westPatch && surroundingPatches.westPatch.objectStatus === 'ACT')
-      );
+   let gridLocationIsClickable = patch => {
+      return patch.status === 'empty';
    };
 
    return (
       <div>
          <NavMenu>
             <NavItem>
-               <NavLink href="#" className="text-dark" onClick={() => imageSizeAdjust(1)}>
+               <NavLink href="#" className="text-dark" onClick={() => imageSizeAdjustClick(1)}>
                   <FontAwesomeIcon icon={faPlus} />
                </NavLink>
             </NavItem>
             <NavItem>
-               <NavLink href="#" className="text-dark" onClick={() => imageSizeAdjust(-1)}>
+               <NavLink href="#" className="text-dark" onClick={() => imageSizeAdjustClick(-1)}>
                   <FontAwesomeIcon icon={faMinus} />
                </NavLink>
             </NavItem>
          </NavMenu>
          <div className="align-center" style={{ height: mainAreaHeight + 'px' }}>
-            <div style={cssGridContainer}>
-               <button
-                  className="button-up alignCenter"
-                  style={{ gridColumnStart: 2, gridColumnEnd: 3, gridRowStart: 1, gridRowEnd: 2 }}
-                  onClick={() => moveGrid('up')}>
-                  <FontAwesomeIcon icon={faAngleDoubleUp} />
-               </button>
-               <button
-                  className="button-down alignCenter"
-                  style={{ gridColumnStart: 2, gridColumnEnd: 3, gridRowStart: 3, gridRowEnd: 4 }}
-                  onClick={() => moveGrid('down')}>
-                  <FontAwesomeIcon icon={faAngleDoubleDown} />
-               </button>
-               <button
-                  className="button-left alignCenter"
-                  style={{ gridColumnStart: 1, gridColumnEnd: 2, gridRowStart: 2, gridRowEnd: 3 }}
-                  onClick={() => moveGrid('left')}>
-                  <FontAwesomeIcon icon={faAngleDoubleLeft} />
-               </button>
-               <button
-                  className="button-right alignCenter"
-                  style={{ gridColumnStart: 3, gridColumnEnd: 4, gridRowStart: 2, gridRowEnd: 3 }}
-                  onClick={() => moveGrid('right')}>
-                  <FontAwesomeIcon icon={faAngleDoubleRight} />
-               </button>
+            {isLoading ? (
+               <FontAwesomeIcon icon={faSpinner} spin />
+            ) : (
+               <div style={cssGridContainer}>
+                  <button
+                     className="button-up alignCenter"
+                     style={{ gridColumnStart: 2, gridColumnEnd: 3, gridRowStart: 1, gridRowEnd: 2 }}
+                     onClick={() => moveGridClick('up')}>
+                     <FontAwesomeIcon icon={faAngleDoubleUp} />
+                  </button>
+                  <button
+                     className="button-down alignCenter"
+                     style={{ gridColumnStart: 2, gridColumnEnd: 3, gridRowStart: 3, gridRowEnd: 4 }}
+                     onClick={() => moveGridClick('down')}>
+                     <FontAwesomeIcon icon={faAngleDoubleDown} />
+                  </button>
+                  <button
+                     className="button-left alignCenter"
+                     style={{ gridColumnStart: 1, gridColumnEnd: 2, gridRowStart: 2, gridRowEnd: 3 }}
+                     onClick={() => moveGridClick('left')}>
+                     <FontAwesomeIcon icon={faAngleDoubleLeft} />
+                  </button>
+                  <button
+                     className="button-right alignCenter"
+                     style={{ gridColumnStart: 3, gridColumnEnd: 4, gridRowStart: 2, gridRowEnd: 3 }}
+                     onClick={() => moveGridClick('right')}>
+                     <FontAwesomeIcon icon={faAngleDoubleRight} />
+                  </button>
 
-               <div style={{ gridColumnStart: 2, gridColumnEnd: 3, gridRowStart: 2, gridRowEnd: 3, ...fullGridContainer }}>
-                  {fullGrid &&
-                     fullGrid.map((column, i) => {
+                  <div style={{ gridColumnStart: 2, gridColumnEnd: 3, gridRowStart: 2, gridRowEnd: 3, ...fullGridContainer }}>
+                     {fullGrid.map((column, i) => {
                         return (
                            <div className="column-container" key={column.map(item => item && item.patchId).join() + '-' + i}>
                               {column.map((patch, j) => (
                                  <img
-                                    className={gridLocationIsClickable(i, j) ? 'patch-clickable' : ''}
-                                    key={patch ? patch.patchId : `emptyPatch${i}-${j}`}
-                                    src={patch ? patch.__src : placeholderImageCheckers}
+                                    className={gridLocationIsClickable(patch) ? 'patch-clickable' : ''}
+                                    key={patch.patchId}
+                                    src={patch.src}
                                     style={{ width: imageSize + 'px', height: imageSize + 'px' }}
-                                    onClick={() => patchClick(patch, i, j)}
+                                    onClick={() => patchClick(patch)}
                                  />
                               ))}
                            </div>
                         );
                      })}
+                  </div>
                </div>
-            </div>
+            )}
          </div>
       </div>
    );

@@ -34,19 +34,24 @@ namespace Quilti.Controllers
         }
 
         [HttpGet("{patchId}")]
-        public async Task<PatchGetRequestDto> Get(int patchId)
+        public async Task<PatchGetRequestDto> Get(string patchId)
         {
             return new PatchGetRequestDto(PatchManager.GetPatch(_context, _cache, patchId));
         }
 
-        [HttpPost]
-        public async Task<ActionResult<PatchGetRequestDto>> Post(PatchPostReserveDto patchPostReserveDto)
-        {
-            var creatorIp = HttpContext.Connection.RemoteIpAddress.ToString();
-            if (PatchManager.UserHasHitCreateCap(_context, creatorIp)) return Forbid();
+        //[HttpPost]
+        //public async Task<ActionResult<PatchGetRequestDto>> Post(PatchPostReserveDto patchPostReserveDto)
+        //{
+        //    var creatorIp = HttpContext.Connection.RemoteIpAddress.ToString();
+        //    if (PatchManager.UserHasHitCreateCap(_context, creatorIp)) return Forbid();
+        //    return new PatchGetRequestDto(PatchManager.ReservePatch(_context, _cache, patchPostReserveDto));
+        //}
 
-            return new PatchGetRequestDto(PatchManager.ReservePatch(_context, _cache, patchPostReserveDto));
-        }
+
+        // TODO reminder for when I do /create/ get we need to make sure it's the same IP requesting it!
+
+
+
 
 
         public async Task<Patch> OldGetForTesting()

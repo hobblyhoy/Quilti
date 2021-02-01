@@ -22,17 +22,16 @@ namespace Quilti.Controllers
         }
 
         [HttpGet("{patchId}")]
-        public async Task<string> Get(int patchId)
+        public async Task<string> Get(string patchId)
         {
             var patchImage = _context.PatchImages.First(p => p.PatchId == patchId);
             return patchImage.Image;
         }
 
-        [HttpPost]
-        public async Task Post()
-        {
-
-        }
+        //[HttpPost]
+        //public async Task Post()
+        //{
+        //}
     }
 }
 

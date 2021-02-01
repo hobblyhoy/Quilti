@@ -59,40 +59,9 @@ namespace Quilti.DAL
             //// Patch \\\\
             modelBuilder.Entity<Patch>().HasKey("PatchId");
             modelBuilder.Entity<Patch>().Property("CreatorIp").IsRequired();
+            modelBuilder.Entity<Patch>().Property("X").IsRequired();
+            modelBuilder.Entity<Patch>().Property("Y").IsRequired();
             modelBuilder.Entity<Patch>().Property("ImageMini").HasColumnType("VARCHAR(MAX)");
-
-            // Option 1
-            //modelBuilder.Entity<Patch>()
-            //   .HasOne(x => x.NorthPatch)
-            //   .WithOne(x => x.SouthPatch)
-            //   .HasForeignKey(typeof(Patch), "NorthPatchId");
-            //modelBuilder.Entity<Patch>()
-            //   .HasOne(x => x.EastPatch)
-            //   .WithOne(x => x.WestPatch)
-            //   .HasForeignKey(typeof(Patch), "EastPatchId");
-
-            // Option 2...
-            modelBuilder.Entity<Patch>()
-                .HasOne(x => x.NorthPatch)
-                .WithOne()
-                .HasForeignKey(typeof(Patch), "NorthPatchId");
-
-            modelBuilder.Entity<Patch>()
-                .HasOne(x => x.SouthPatch)
-                .WithOne()
-                .HasForeignKey(typeof(Patch), "SouthPatchId");
-
-            modelBuilder.Entity<Patch>()
-                .HasOne(x => x.EastPatch)
-                .WithOne()
-                .HasForeignKey(typeof(Patch), "EastPatchId");
-
-            modelBuilder.Entity<Patch>()
-                .HasOne(x => x.WestPatch)
-                .WithOne()
-                .HasForeignKey(typeof(Patch), "WestPatchId");
-
-
 
 
             //// Patch Image \\\\

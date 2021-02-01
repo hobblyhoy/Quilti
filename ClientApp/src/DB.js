@@ -17,40 +17,35 @@ export function db_init() {
    try {
       initDB(DBConfig);
    } catch {
-      console.error('failed to initialize DB (probably already initialized)');
+      console.error('failed to initialize DB (probably already initialized - HMR related error)');
    }
 }
 
-export async function db_patch_insertSafe(patchParam) {
-   let patch = { ...patchParam };
-   console.log('in db_patch_insertSafe', patch);
+export async function db_patch_insertSafe(patch) {
    const db = useIndexedDB('patches');
-   let existingVal = await db.getByID(patch.patchId);
+   let existingVal = await db.getByIndex('patchId', patch.patchId);
    if (!existingVal) {
-      // Strip out decorated properties
-      Object.getOwnPropertyNames(patch).forEach(prop => {
-         if (prop.startsWith('__')) delete patch[prop];
-      });
-
       db.add(patch, patch.patchId);
    }
 }
 
 export async function db_patch_get(patchId) {
    const db = useIndexedDB('patches');
-   return await db.getByID(patchId);
+   //var ret = await db.getByID(patchId);
+   var patch = await db.getByIndex('patchId', patchId);
+   return patch;
 }
 
 export async function db_patchImage_get(patchId) {
    const db = useIndexedDB('patchImages');
-   let obj = await db.getByID(patchId);
+   let obj = await db.getByIndex('patchId', patchId);
    return obj && obj.image;
 }
 
 export async function db_patchImage_insertSafe(patchId, image) {
    const db = useIndexedDB('patchImages');
-   let existingVal = await db.getByID(patchId);
+   let existingVal = await db.getByIndex('patchId', patchId);
    if (!existingVal) {
-      db.add({ image }, patchId);
+      db.add({ image, patchId }, patchId);
    }
 }

@@ -21,10 +21,8 @@ namespace Quilti.Migrations
 
             modelBuilder.Entity("Quilti.Models.Patch", b =>
                 {
-                    b.Property<int>("PatchId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .UseIdentityColumn();
+                    b.Property<string>("PatchId")
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTimeOffset?>("CreatedDate")
                         .HasColumnType("datetimeoffset");
@@ -33,44 +31,22 @@ namespace Quilti.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("EastPatchId")
-                        .HasColumnType("int");
-
                     b.Property<string>("ImageMini")
                         .HasColumnType("VARCHAR(MAX)");
 
                     b.Property<DateTimeOffset?>("LastModifiedDate")
                         .HasColumnType("datetimeoffset");
 
-                    b.Property<int?>("NorthPatchId")
-                        .HasColumnType("int");
-
                     b.Property<string>("ObjectStatus")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("SouthPatchId")
+                    b.Property<int>("X")
                         .HasColumnType("int");
 
-                    b.Property<int?>("WestPatchId")
+                    b.Property<int>("Y")
                         .HasColumnType("int");
 
                     b.HasKey("PatchId");
-
-                    b.HasIndex("EastPatchId")
-                        .IsUnique()
-                        .HasFilter("[EastPatchId] IS NOT NULL");
-
-                    b.HasIndex("NorthPatchId")
-                        .IsUnique()
-                        .HasFilter("[NorthPatchId] IS NOT NULL");
-
-                    b.HasIndex("SouthPatchId")
-                        .IsUnique()
-                        .HasFilter("[SouthPatchId] IS NOT NULL");
-
-                    b.HasIndex("WestPatchId")
-                        .IsUnique()
-                        .HasFilter("[WestPatchId] IS NOT NULL");
 
                     b.ToTable("Patches");
                 });
@@ -95,8 +71,8 @@ namespace Quilti.Migrations
                     b.Property<string>("ObjectStatus")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("PatchId")
-                        .HasColumnType("int");
+                    b.Property<string>("PatchId")
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("PatchImageId");
 
@@ -105,33 +81,6 @@ namespace Quilti.Migrations
                         .HasFilter("[PatchId] IS NOT NULL");
 
                     b.ToTable("PatchImages");
-                });
-
-            modelBuilder.Entity("Quilti.Models.Patch", b =>
-                {
-                    b.HasOne("Quilti.Models.Patch", "EastPatch")
-                        .WithOne()
-                        .HasForeignKey("Quilti.Models.Patch", "EastPatchId");
-
-                    b.HasOne("Quilti.Models.Patch", "NorthPatch")
-                        .WithOne()
-                        .HasForeignKey("Quilti.Models.Patch", "NorthPatchId");
-
-                    b.HasOne("Quilti.Models.Patch", "SouthPatch")
-                        .WithOne()
-                        .HasForeignKey("Quilti.Models.Patch", "SouthPatchId");
-
-                    b.HasOne("Quilti.Models.Patch", "WestPatch")
-                        .WithOne()
-                        .HasForeignKey("Quilti.Models.Patch", "WestPatchId");
-
-                    b.Navigation("EastPatch");
-
-                    b.Navigation("NorthPatch");
-
-                    b.Navigation("SouthPatch");
-
-                    b.Navigation("WestPatch");
                 });
 
             modelBuilder.Entity("Quilti.Models.PatchImage", b =>
