@@ -35,7 +35,7 @@ namespace Quilti.DAL
                 if (entry.State == EntityState.Added)
                 {
                     entityBase.CreatedDate = currentDateTimeOffset;
-                    entityBase.ObjectStatus = ObjectStatus.Active;
+                    entityBase.ObjectStatus = entityBase.ObjectStatus ?? ObjectStatus.Active;
                 }
 
                 entityBase.LastModifiedDate = currentDateTimeOffset;

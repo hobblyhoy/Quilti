@@ -74,3 +74,10 @@ export async function api_getPatchIdsInRange(leftX, rightX, topY, bottomY) {
    let resp = await axios.get(`/api/PatchGroup/${leftX}/${rightX}/${topY}/${bottomY}`);
    return resp.data;
 }
+
+export async function api_reservePatch(patchId) {
+   if (arguments.length !== 1) throw 'invalid args in api_getPatchDec';
+
+   let resp = await axios.post('/api/Patch/' + patchId);
+   return resp.data;
+}

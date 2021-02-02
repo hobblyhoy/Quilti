@@ -23,8 +23,8 @@ import placeholderImageReserved from '../assets/reserved.js';
 import './MainView.css';
 import { NavMenu } from './NavMenu';
 import { NavItem, NavLink } from 'reactstrap';
-import { useParams } from 'react-router-dom';
-import { api_getInitialPatchDec, api_getPatchDec, api_getPatchIdsInRange, api_getPatchImage } from '../API';
+import { useParams, useHistory } from 'react-router-dom';
+import { api_getInitialPatchDec, api_getPatchDec, api_getPatchIdsInRange, api_getPatchImage, api_reservePatch } from '../API';
 
 export function MainView() {
    const [dbIsInitialized, setDbIsInitialized] = useState(false);
@@ -32,6 +32,7 @@ export function MainView() {
    const [fullGridCoordinates, setFullGridCoordinates] = useState(null);
    const [fullGrid, setFullGrid] = useState(null);
    const { patchIdParam } = useParams();
+   const history = useHistory();
    // Layout aids
    const [mainAreaHeight, setMainAreaHeight] = useState(1);
    const [buttonSize, setButtonSize] = useState(30);
@@ -158,9 +159,13 @@ export function MainView() {
    }, [fullGrid]);
 
    //// User interaction / onClick bindings \\\\
-   let patchClick = patch => {
-      console.log('TODO');
+   let patchClick = async patch => {
+      if (!gridLocationIsClickable(patch)) return;
+
+      // TODO check for an error here, if we hit one display some kind of message about it already being reserved and retrigger the grid load
       console.log({ patch });
+      let reservedPatch = await api_reservePatch(patch.patchId);
+      history.push('/draw/' + reservedPatch);
    };
 
    let imageSizeAdjustClick = factor => {

@@ -38,9 +38,26 @@ namespace Quilti.Managers
             return usersRecentPatches.Count > 4;
         }
 
-        public static Patch ReservePatch(QuiltiContext context, IMemoryCache cache, PatchPostReserveDto patchPostReserveDto)
+        public static bool PatchExists(QuiltiContext context, string patchId)
         {
-            return null;
+            var patch = context.Patches.FirstOrDefault(p => p.PatchId == patchId);
+            return patch != null;
+        }
+
+        public static async Task<string> ReservePatch(QuiltiContext context, string creatorIp, string patchId)
+        {
+            var coordinates = Helper.PatchIdToCoordinates(patchId);
+            var newPatch = new Patch()
+            {
+                PatchId = patchId,
+                X = coordinates.X,
+                Y = coordinates.Y,
+                CreatorIp = creatorIp,
+                ObjectStatus = ObjectStatus.Reserved
+            };
+            context.Patches.Add(newPatch);
+            await context.SaveChangesAsync();
+            return newPatch.PatchId;
         }
 
         public static List<string> GetPatchIdsInRange(QuiltiContext context, int leftX, int rightX, int topY, int bottomY)
@@ -52,5 +69,23 @@ namespace Quilti.Managers
                     .ToList();
             return patches;
         }
+
+        public static async Task<Patch> CompletePatch(QuiltiContext context, Patch patch, string imageMini, string image)
+        {
+            var patchImage = new PatchImage()
+            {
+                PatchId = patch.PatchId,
+                Image = image
+            };
+            context.PatchImages.Add(patchImage);
+
+            // TODO need to make this clear the cache and audit for anywhere else we need it
+            patch.ImageMini = imageMini;
+            patch.ObjectStatus = ObjectStatus.Active;
+            await context.SaveChangesAsync();
+
+            return patch;
+        }
+
     }
 }

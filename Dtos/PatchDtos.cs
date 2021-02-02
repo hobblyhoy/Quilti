@@ -6,14 +6,9 @@ using System.Threading.Tasks;
 
 namespace Quilti.Dtos
 {
-    // Dont think we'll be actually using this one, just for the POC
-    public class PatchRequest
-    {
-        public string ImageMini { get; set; }
-        public string Image { get; set; }
-    }
-
-    public class PatchGetRequestDto
+    // Naming convention:
+    // <Object Name> <Http Method> <"Request" || "Response"> <"Dto">
+    public class PatchGetResponseDto
     {
         public string PatchId { get; set; }
         public int X { get; set; }
@@ -22,7 +17,7 @@ namespace Quilti.Dtos
         public string ImageMini { get; set; }
         public string ObjectStatus { get; set; }
 
-        public PatchGetRequestDto(Patch patch)
+        public PatchGetResponseDto(Patch patch)
         {
             this.PatchId = patch.PatchId;
             this.X = patch.X;
@@ -32,12 +27,11 @@ namespace Quilti.Dtos
         }
     }
 
-    public class PatchPostReserveDto
+    public class PatchPatchRequestDto
     {
-        //public int? NorthPatchId { get; set; }
-        //public int? SouthPatchId { get; set; }
-        //public int? EastPatchId { get; set; }
-        //public int? WestPatchId { get; set; }
+        public string PatchId { get; set; }
+        public string Image { get; set; }
+        public string ImageMini { get; set; }
 
     }
 }
