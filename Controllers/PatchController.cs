@@ -46,6 +46,8 @@ namespace Quilti.Controllers
             if (PatchManager.UserHasHitCreateCap(_context, creatorIp)) return Forbid();
             if (PatchManager.PatchExists(_context, patchId)) return Conflict();
 
+            await PatchManager.ClearOutOldReservedPatches(_context, _cache);
+
             return await PatchManager.ReservePatch(_context, creatorIp, patchId);
         }
 
@@ -59,7 +61,7 @@ namespace Quilti.Controllers
             var patch = PatchManager.GetPatch(_context, _cache, requestDto.PatchId);
             if (patch.CreatorIp != creatorIp) return Forbid();
 
-            return await PatchManager.CompletePatch(_context, patch, requestDto.ImageMini, requestDto.Image);
+            return await PatchManager.CompletePatch(_context, _cache, patch, requestDto.ImageMini, requestDto.Image);
         }
     }
 }

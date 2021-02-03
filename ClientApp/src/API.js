@@ -81,3 +81,6 @@ export async function api_reservePatch(patchId) {
    let resp = await axios.post('/api/Patch/' + patchId);
    return resp.data;
 }
+
+// TODO we need some kind of global error handler here, we only have a few key events I
+//  think they could be tied all into the same kind of central notification system

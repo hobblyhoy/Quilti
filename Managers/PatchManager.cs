@@ -62,7 +62,6 @@ namespace Quilti.Managers
 
         public static List<string> GetPatchIdsInRange(QuiltiContext context, int leftX, int rightX, int topY, int bottomY)
         {
-
             var patches = context.Patches
                     .Where(p => p.X >= leftX && p.X <= rightX && p.Y >= bottomY && p.Y <= topY)
                     .Select(p => p.PatchId)
@@ -70,7 +69,7 @@ namespace Quilti.Managers
             return patches;
         }
 
-        public static async Task<Patch> CompletePatch(QuiltiContext context, Patch patch, string imageMini, string image)
+        public static async Task<Patch> CompletePatch(QuiltiContext context, IMemoryCache cache, Patch patch, string imageMini, string image)
         {
             var patchImage = new PatchImage()
             {
@@ -79,12 +78,23 @@ namespace Quilti.Managers
             };
             context.PatchImages.Add(patchImage);
 
-            // TODO need to make this clear the cache and audit for anywhere else we need it
             patch.ImageMini = imageMini;
             patch.ObjectStatus = ObjectStatus.Active;
+
+            context.Patches.Update(patch);
             await context.SaveChangesAsync();
 
+            // TODO need to audit for anywhere else we need to clear cache
+            cache.Remove($"Patch_{patch.PatchId}");
+
             return patch;
+        }
+
+        public static async Task ClearOutOldReservedPatches(QuiltiContext context, IMemoryCache cache)
+        {
+            var oneHourAgo = DateTimeOffset.Now.AddHours(-1);
+            context.Patches.RemoveRange(context.Patches.Where(p => p.ObjectStatus == ObjectStatus.Reserved && p.LastModifiedDate < oneHourAgo));
+            await context.SaveChangesAsync();
         }
 
     }

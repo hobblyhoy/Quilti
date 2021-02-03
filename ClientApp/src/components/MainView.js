@@ -163,6 +163,7 @@ export function MainView() {
       if (!gridLocationIsClickable(patch)) return;
 
       // TODO check for an error here, if we hit one display some kind of message about it already being reserved and retrigger the grid load
+      //
       console.log({ patch });
       let reservedPatch = await api_reservePatch(patch.patchId);
       history.push('/draw/' + reservedPatch);
@@ -202,6 +203,8 @@ export function MainView() {
       }
       setFullGridCoordinates(coordinates);
    };
+
+   // TODO resize events, heavily debounced
 
    //// Dynamic CSS styling \\\\
    const cssGridContainer = {
