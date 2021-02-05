@@ -104,10 +104,12 @@ export function util_gridFirstOrDefault(grid, predicate) {
 export function util_createEmptyPatchDecFromPatchId(patchId) {
    if (arguments.length !== 1) throw 'invalid args in util_createEmptyPatchDecFromPatchId';
 
+   let coordinates = util_patchCoordinatesFromPatchId(patchId);
+
    return {
       patchId,
-      x: patchId.split('x')[0],
-      y: patchId.split('x')[1],
+      x: coordinates.x,
+      y: coordinates.y,
       src: placeholderImageCheckers,
       status: 'empty',
    };
@@ -124,5 +126,14 @@ export function util_createPatchDecFromPatch(patch) {
       y: patch.y,
       src: patch.objectStatus === 'ACT' ? patch.imageMini : placeholderImageReserved,
       status: patch.objectStatus === 'ACT' ? 'partial' : 'reserved',
+   };
+}
+
+export function util_patchCoordinatesFromPatchId(patchId) {
+   if (arguments.length !== 1) throw 'invalid args in util_patchComponentsFromPatchId';
+
+   return {
+      x: parseInt(patchId.split('x')[0]),
+      y: parseInt(patchId.split('x')[1]),
    };
 }

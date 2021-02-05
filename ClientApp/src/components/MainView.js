@@ -17,7 +17,7 @@ import {
    faMinus,
    faSpinner,
 } from '@fortawesome/free-solid-svg-icons';
-import { db_init, db_patch_get } from '../DB';
+import { db_init } from '../DB';
 import placeholderImageCheckers from '../assets/checkers.js';
 import placeholderImageReserved from '../assets/reserved.js';
 import './MainView.css';
@@ -61,7 +61,6 @@ export function MainView() {
             imageSizeTemp = imageSizeTemp / 2;
             ({ gridColumns, gridRows } = util_calculateAllowableGridRoom(buttonSize, imageSizeTemp, 100));
          }
-         console.log({ gridColumns, gridRows });
          setImageSize(imageSizeTemp);
       })();
    }, []);
@@ -206,7 +205,7 @@ export function MainView() {
 
    // TODO resize events, heavily debounced
 
-   //// Dynamic CSS styling \\\\
+   //// Dynamic CSS styling / display aids \\\\
    const cssGridContainer = {
       display: 'grid',
       gridTemplateColumns: fullGrid ? `${buttonSize}px ${imageSize * util_gridColumnCount(fullGrid)}px ${buttonSize}px` : '',
