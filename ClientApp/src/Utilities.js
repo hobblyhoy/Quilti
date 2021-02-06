@@ -133,7 +133,7 @@ export function util_patchCoordinatesFromPatchId(patchId) {
    if (arguments.length !== 1) throw 'invalid args in util_patchComponentsFromPatchId';
 
    return {
-      x: parseInt(patchId.split('x')[0]),
-      y: parseInt(patchId.split('x')[1]),
+      x: parseInt(patchId.split('x')[0], 10),
+      y: parseInt(patchId.split('x')[1], 10),
    };
 }

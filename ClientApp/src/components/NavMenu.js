@@ -25,24 +25,7 @@ export function NavMenu(props) {
                </NavbarBrand>
                <NavbarToggler onClick={toggleNavbar} className="mr-2" />
                <Collapse className="d-sm-inline-flex flex-sm-row-reverse" isOpen={!collapsed} navbar>
-                  <ul className="navbar-nav flex-grow">
-                     {/* <NavItem>
-                        <NavLink className="text-dark" onClick={test}>
-                           Home
-                        </NavLink>
-                     </NavItem>
-                     <NavItem>
-                        <NavLink tag={Link} className="text-dark" to="/counter">
-                           Counter
-                        </NavLink>
-                     </NavItem>
-                     <NavItem>
-                        <NavLink tag={Link} className="text-dark" to="/fetch-data">
-                           Fetch data
-                        </NavLink>
-                     </NavItem> */}
-                     {props.children}
-                  </ul>
+                  <ul className="navbar-nav flex-grow">{props.children}</ul>
                </Collapse>
             </Container>
          </Navbar>
