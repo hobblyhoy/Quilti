@@ -1,11 +1,16 @@
 ﻿import React, { useEffect, useState } from 'react';
 import { NavMenu } from './NavMenu';
+import { QuiltiCanvas } from './QuiltiCanvas';
+import { BrushPicker } from './BrushPicker';
+import { ColorPicker } from './ColorPicker';
 import { NavItem, NavLink } from 'reactstrap';
 import { useParams, useHistory } from 'react-router-dom';
-import './MainDraw.css';
+import './Global.css';
 import { db_init } from '../DB';
 import { util_debugGrid, util_gridInitialize, util_patchCoordinatesFromPatchId, util_gridFirstOrDefault } from '../Utilities';
 import { api_getPatchIdsInRange, api_getPatchDec, api_getPatchImage } from '../API';
+import { debounce } from 'lodash';
+import { WidthPicker } from './WidthPicker';
 
 export function MainDraw() {
    const { patchIdParam } = useParams();
@@ -15,6 +20,13 @@ export function MainDraw() {
    const [patchIdsInRange, setPatchIdsInRange] = useState(null);
    const [fullGrid, setFullGrid] = useState(null);
    const [isLoading, setIsLoading] = useState(true);
+   // Canvas
+   const [color, setColor] = useState('#DB3E00');
+   const [width, setWidth] = useState(43);
+   const [drawMode, setDrawMode] = useState('Pencil');
+   const [background, setBackground] = useState({ color: 'lightgray' });
+   const [canvasState, setCanvasState] = useState(null);
+   const [canvasStateHistory, setCanvasStateHistory] = useState([]);
 
    //// Init \\\\
    useEffect(() => {
@@ -43,8 +55,6 @@ export function MainDraw() {
 
          let pcfp = util_patchCoordinatesFromPatchId(patchIdParam);
          let grid = util_gridInitialize(3, 3, pcfp.x - 1, pcfp.y + 1);
-         // Yank out our currently being constructed center patch so we dont accidentally try to do operations on it
-         //grid[1][1] = null;
          util_debugGrid(grid);
 
          // Fill in all the ones that we know contain something
@@ -82,10 +92,32 @@ export function MainDraw() {
    }, [fullGrid]);
 
    //// User interaction / onClick bindings \\\\
+   let resizeEventDebounced = debounce(() => {
+      setMainAreaHeight(window.innerHeight - document.getElementById('nav').offsetHeight);
+      setMainAreaWidth(window.innerWidth);
+   }, 50);
+   useEffect(() => {
+      window.addEventListener('resize', resizeEventDebounced);
+      return () => {
+         window.removeEventListener('resize', resizeEventDebounced);
+      };
+   }, []);
    // TODO paintbrush, pencil, etc
    // TODO brush size
    // TODO color picker
+   // TODO Clear button
    // TODO Im Done! button
+
+   let undo = () => {
+      canvasStateHistory.pop(); //throw away the current state of the canvas
+      let previousState = canvasStateHistory.pop();
+      setCanvasState(previousState);
+   };
+   useEffect(() => {
+      if (!canvasState) return;
+
+      setCanvasStateHistory(canvasStateHistory => [...canvasStateHistory, canvasState]);
+   }, [canvasState]);
 
    //// Dynamic CSS styling / display aids \\\\
    let calculateFullGridClass = (column, row) => {
@@ -125,13 +157,27 @@ export function MainDraw() {
       <div>
          <NavMenu>
             <NavItem>
-               <NavLink href="#" className="text-dark" onClick={() => console.log('hi')}>
-                  {/* <FontAwesomeIcon icon={faPlus} /> */}
+               <NavLink href="#" className="text-dark">
+                  <div>
+                     <button onClick={undo} disabled={canvasStateHistory.length < 2}>
+                        Undo
+                     </button>
+                  </div>
                </NavLink>
             </NavItem>
             <NavItem>
-               <NavLink href="#" className="text-dark" onClick={() => console.log('hi')}>
-                  {/* <FontAwesomeIcon icon={faMinus} /> */}
+               <NavLink href="#" className="text-dark">
+                  <ColorPicker color={color} setColor={setColor} />
+               </NavLink>
+            </NavItem>
+            <NavItem>
+               <NavLink href="#" className="text-dark">
+                  <BrushPicker drawMode={drawMode} setDrawMode={setDrawMode} />
+               </NavLink>
+            </NavItem>
+            <NavItem>
+               <NavLink href="#" className="text-dark">
+                  <WidthPicker width={width} setWidth={setWidth} />
                </NavLink>
             </NavItem>
          </NavMenu>
@@ -141,10 +187,18 @@ export function MainDraw() {
                   fullGrid.map((column, i) => {
                      return column.map((patch, j) => {
                         return i === 1 && j == 1 ? (
-                           // This center space is for our canvas
-                           <div key={patch.patchId}>Canvas goes here</div>
+                           // Our canvas
+                           <QuiltiCanvas
+                              key={patch.patchId}
+                              color={color}
+                              width={width}
+                              drawMode={drawMode}
+                              background={background}
+                              canvasState={canvasState}
+                              setCanvasState={setCanvasState}
+                           />
                         ) : (
-                           // This space is for the 8 surrounding patches
+                           // The 8 surrounding patches
                            <div key={patch.patchId} className={calculateFullGridClass(i, j)}>
                               <img src={patch.src} />
                            </div>

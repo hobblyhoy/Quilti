@@ -6,6 +6,7 @@ import {
    util_gridRowCount,
    util_gridInitialize,
    util_gridFirstOrDefault,
+   util_extractReactState,
 } from '../Utilities';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -18,13 +19,12 @@ import {
    faSpinner,
 } from '@fortawesome/free-solid-svg-icons';
 import { db_init } from '../DB';
-import placeholderImageCheckers from '../assets/checkers.js';
-import placeholderImageReserved from '../assets/reserved.js';
-import './MainView.css';
+import './Global.css';
 import { NavMenu } from './NavMenu';
 import { NavItem, NavLink } from 'reactstrap';
 import { useParams, useHistory } from 'react-router-dom';
 import { api_getInitialPatchDec, api_getPatchDec, api_getPatchIdsInRange, api_getPatchImage, api_reservePatch } from '../API';
+import { debounce } from 'lodash';
 
 export function MainView() {
    const [dbIsInitialized, setDbIsInitialized] = useState(false);
@@ -203,7 +203,34 @@ export function MainView() {
       setFullGridCoordinates(coordinates);
    };
 
-   // TODO resize events, heavily debounced
+   let resizeEventDebounced = debounce(() => {
+      let fullGrid = util_extractReactState(setFullGrid);
+      if (!fullGrid) return;
+
+      console.log('In resize event');
+
+      let column = Math.floor(util_gridColumnCount(fullGrid) / 2);
+      let row = Math.floor(util_gridRowCount(fullGrid) / 2);
+      let centerPatchDec = fullGrid[column][row];
+
+      // Figure out the size of our grid and the appropriate global coordinates
+      let buttonSize = util_extractReactState(setButtonSize);
+      let imageSize = util_extractReactState(setImageSize);
+      let { gridColumns, gridRows } = util_calculateAllowableGridRoom(buttonSize, imageSize, 100);
+      if (gridColumns < 2 || gridRows < 2) return;
+
+      let leftX = centerPatchDec.x - Math.floor(gridColumns / 2);
+      let rightX = leftX + gridColumns - 1;
+      let topY = centerPatchDec.y + Math.floor(gridRows / 2);
+      let bottomY = topY - gridRows + 1;
+      setFullGridCoordinates({ leftX, rightX, topY, bottomY });
+   }, 500);
+   useEffect(() => {
+      window.addEventListener('resize', resizeEventDebounced);
+      return () => {
+         window.removeEventListener('resize', resizeEventDebounced);
+      };
+   }, []);
 
    //// Dynamic CSS styling / display aids \\\\
    const cssGridContainer = {

@@ -137,3 +137,16 @@ export function util_patchCoordinatesFromPatchId(patchId) {
       y: parseInt(patchId.split('x')[1], 10),
    };
 }
+
+//// Misc Utilities \\\\
+// Take advantage of the fact that our setter maintain access to the latest React state values
+// to pull it out when we've lost context (event listeners, setTimeout, etc)
+export function util_extractReactState(setter) {
+   if (arguments.length !== 1) throw 'invalid args in util_extractReactState';
+   let valTemp;
+   setter(val => {
+      valTemp = val;
+      return val;
+   });
+   return valTemp;
+}

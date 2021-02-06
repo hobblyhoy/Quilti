@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { fabric } from 'fabric';
 import { GithubPicker } from 'react-color';
 import { Slider } from 'office-ui-fabric-react/lib/Slider';
 import { QuiltiCanvas } from './QuiltiCanvas';
