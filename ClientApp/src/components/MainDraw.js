@@ -25,8 +25,6 @@ export function MainDraw() {
    const [width, setWidth] = useState(43);
    const [drawMode, setDrawMode] = useState('Pencil');
    const [background, setBackground] = useState({ color: 'lightgray' });
-   const [canvasState, setCanvasState] = useState(null);
-   const [canvasStateHistory, setCanvasStateHistory] = useState([]);
 
    //// Init \\\\
    useEffect(() => {
@@ -108,17 +106,6 @@ export function MainDraw() {
    // TODO Clear button
    // TODO Im Done! button
 
-   let undo = () => {
-      canvasStateHistory.pop(); //throw away the current state of the canvas
-      let previousState = canvasStateHistory.pop();
-      setCanvasState(previousState);
-   };
-   useEffect(() => {
-      if (!canvasState) return;
-
-      setCanvasStateHistory(canvasStateHistory => [...canvasStateHistory, canvasState]);
-   }, [canvasState]);
-
    //// Dynamic CSS styling / display aids \\\\
    let calculateFullGridClass = (column, row) => {
       let ret = '';
@@ -159,9 +146,9 @@ export function MainDraw() {
             <NavItem>
                <NavLink href="#" className="text-dark">
                   <div>
-                     <button onClick={undo} disabled={canvasStateHistory.length < 2}>
+                     {/* <button onClick={undo} disabled={canvasStateHistory.length < 2}>
                         Undo
-                     </button>
+                     </button> */}
                   </div>
                </NavLink>
             </NavItem>
@@ -188,15 +175,7 @@ export function MainDraw() {
                      return column.map((patch, j) => {
                         return i === 1 && j == 1 ? (
                            // Our canvas
-                           <QuiltiCanvas
-                              key={patch.patchId}
-                              color={color}
-                              width={width}
-                              drawMode={drawMode}
-                              background={background}
-                              canvasState={canvasState}
-                              setCanvasState={setCanvasState}
-                           />
+                           <QuiltiCanvas key={patch.patchId} color={color} width={width} drawMode={drawMode} background={background} />
                         ) : (
                            // The 8 surrounding patches
                            <div key={patch.patchId} className={calculateFullGridClass(i, j)}>

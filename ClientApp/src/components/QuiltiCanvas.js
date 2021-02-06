@@ -17,23 +17,6 @@ export function QuiltiCanvas({ color, width, drawMode, background, canvasState, 
    }, []);
 
    useEffect(() => {
-      if (canvas && !eventListenerAttached) {
-         canvas.on('mouse:up', event => {
-            setCanvasState(JSON.stringify(canvas));
-         });
-         setCanvasState(JSON.stringify(canvas));
-         setEventListenerAttached(true);
-      }
-   }, [canvas]);
-   useEffect(() => {
-      // If we've been pipped in a new canvasState then apply it
-      if (canvas && canvasState && JSON.stringify(canvas) != canvasState) {
-         console.log('parent updated canvas state');
-         canvas.loadFromJSON(canvasState, () => canvas.renderAll());
-      }
-   }, [canvasState]);
-
-   useEffect(() => {
       if (!canvas) return;
       console.log({ color, width, drawMode });
 
