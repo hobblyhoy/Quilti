@@ -5,36 +5,38 @@ import DialogContent from '@material-ui/core/DialogContent';
 import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrashAlt } from '@fortawesome/free-solid-svg-icons';
+import { faSave } from '@fortawesome/free-solid-svg-icons';
 
-export function ClearButton({ setBackground, hasInteractedWithCanvas, setHasInteractedWithCanvas }) {
+export function DoneButton({ save, hasInteractedWithCanvas }) {
    const [isOpen, setIsOpen] = useState(false);
 
    let clear = () => {
-      setBackground(background => ({ ...background }));
-      setHasInteractedWithCanvas(false);
+      save();
       setIsOpen(false);
    };
 
    return (
       <div>
          <button onClick={() => setIsOpen(true)} disabled={!hasInteractedWithCanvas}>
-            <FontAwesomeIcon icon={faTrashAlt} />
+            <FontAwesomeIcon icon={faSave} />
          </button>
          <Dialog
             open={isOpen}
             onClose={() => setIsOpen(false)}
             aria-labelledby="alert-dialog-title"
             aria-describedby="alert-dialog-description">
-            <DialogTitle id="alert-dialog-title">Are you sure you want to clear?</DialogTitle>
+            <DialogTitle id="alert-dialog-title">Are you all finished?</DialogTitle>
             <DialogContent>
                <DialogContentText id="alert-dialog-description">
-                  Your work of art will be entirely erased, are you sure you want to continue?
+                  You're about to permanently submit your artwork to the Quilt- Are you all done?
+               </DialogContentText>
+               <DialogContentText>
+                  Remember to add something near the edges to give your neighboring artists something to work with!
                </DialogContentText>
             </DialogContent>
             <DialogActions>
                <button onClick={clear}>
-                  <FontAwesomeIcon icon={faTrashAlt} /> Yes, clear it!
+                  <FontAwesomeIcon icon={faSave} /> I'm Done!
                </button>
                <button onClick={() => setIsOpen(false)}>No</button>
             </DialogActions>

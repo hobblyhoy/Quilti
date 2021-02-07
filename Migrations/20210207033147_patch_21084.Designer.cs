@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Quilti.DAL;
 
 namespace Quilti.Migrations
 {
     [DbContext(typeof(QuiltiContext))]
-    partial class QuiltiContextModelSnapshot : ModelSnapshot
+    [Migration("20210207033147_patch_21084")]
+    partial class patch_21084
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

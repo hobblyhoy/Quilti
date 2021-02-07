@@ -18,6 +18,7 @@ namespace Quilti.DAL
 
         public DbSet<Patch> Patches { get; set; }
         public DbSet<PatchImage> PatchImages { get; set; }
+        public DbSet<Creator> CreatorInfo { get; set; }
 
         // Base overrides
         public void AddTimestampsAndStatusCode()
@@ -72,6 +73,10 @@ namespace Quilti.DAL
                 .HasOne(p => p.PatchImage)
                 .WithOne(pi => pi.Patch)
                 .HasForeignKey(typeof(PatchImage), "PatchId");
+
+
+            //// Creator Info \\\\
+            modelBuilder.Entity<Creator>().HasKey("CreatorIp");
         }
     }
 }

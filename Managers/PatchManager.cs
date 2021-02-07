@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Quilti.DAL;
 using Quilti.Dtos;
@@ -25,17 +26,9 @@ namespace Quilti.Managers
             var patch = cache.GetOrCreate($"Patch_{patchId}", entry =>
             {
                 entry.SlidingExpiration = TimeSpan.FromDays(1);
-                return context.Patches.First(p => p.PatchId == patchId);
+                return context.Patches.AsNoTracking().First(p => p.PatchId == patchId);
             });
             return patch;
-        }
-
-        public static bool UserHasHitCreateCap(QuiltiContext context, string creatorIp)
-        {
-            var oneHourAgo = DateTimeOffset.Now.AddHours(-1);
-
-            var usersRecentPatches = context.Patches.Where(p => p.CreatorIp == creatorIp && p.LastModifiedDate > oneHourAgo).ToList();
-            return usersRecentPatches.Count > 4;
         }
 
         public static bool PatchExists(QuiltiContext context, string patchId)
@@ -69,8 +62,10 @@ namespace Quilti.Managers
             return patches;
         }
 
-        public static async Task<Patch> CompletePatch(QuiltiContext context, IMemoryCache cache, Patch patch, string imageMini, string image)
+        public static async Task<string> CompletePatch(QuiltiContext context, IMemoryCache cache, string patchId, string imageMini, string image)
         {
+            var patch = context.Patches.First(x => x.PatchId == patchId);
+            // Patch Image
             var patchImage = new PatchImage()
             {
                 PatchId = patch.PatchId,
@@ -78,23 +73,27 @@ namespace Quilti.Managers
             };
             context.PatchImages.Add(patchImage);
 
+            // Patch
             patch.ImageMini = imageMini;
             patch.ObjectStatus = ObjectStatus.Active;
-
-            context.Patches.Update(patch);
             await context.SaveChangesAsync();
 
-            // TODO need to audit for anywhere else we need to clear cache
+            // Return
             cache.Remove($"Patch_{patch.PatchId}");
-
-            return patch;
+            return patch.PatchId;
         }
 
-        public static async Task ClearOutOldReservedPatches(QuiltiContext context, IMemoryCache cache)
+        public static async Task ClearOutOldReservedPatches(QuiltiContext context)
         {
             var oneHourAgo = DateTimeOffset.Now.AddHours(-1);
             context.Patches.RemoveRange(context.Patches.Where(p => p.ObjectStatus == ObjectStatus.Reserved && p.LastModifiedDate < oneHourAgo));
             await context.SaveChangesAsync();
+        }
+
+        public static bool PatchMatchesCreator(QuiltiContext context, IMemoryCache cache, string patchId, string creatorIp)
+        {
+            var patch = GetPatch(context, cache, patchId);
+            return patch.CreatorIp == creatorIp;
         }
 
     }

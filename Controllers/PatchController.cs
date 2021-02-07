@@ -43,25 +43,23 @@ namespace Quilti.Controllers
         public async Task<ActionResult<string>> Post(string patchId)
         {
             var creatorIp = HttpContext.Connection.RemoteIpAddress.ToString();
-            if (PatchManager.UserHasHitCreateCap(_context, creatorIp)) return Forbid();
+            if (CreatorManager.UserHasHitCreateCap(_context, _cache, creatorIp)) return StatusCode(403);
             if (PatchManager.PatchExists(_context, patchId)) return Conflict();
 
-            await PatchManager.ClearOutOldReservedPatches(_context, _cache);
+            await PatchManager.ClearOutOldReservedPatches(_context);
 
             return await PatchManager.ReservePatch(_context, creatorIp, patchId);
         }
 
         [HttpPatch]
-        public async Task<ActionResult<Patch>> Patch(PatchPatchRequestDto requestDto) // lol
+        public async Task<ActionResult<string>> Patch(PatchPatchRequestDto requestDto) // lol
         {
             var creatorIp = HttpContext.Connection.RemoteIpAddress.ToString();
             if (!PatchManager.PatchExists(_context, requestDto.PatchId)) return Conflict();
-            if (PatchManager.UserHasHitCreateCap(_context, creatorIp)) return Forbid();
+            if (CreatorManager.UserHasHitCreateCap(_context, _cache, creatorIp)) return StatusCode(403);
+            if (!PatchManager.PatchMatchesCreator(_context, _cache, requestDto.PatchId, creatorIp)) return StatusCode(403);
 
-            var patch = PatchManager.GetPatch(_context, _cache, requestDto.PatchId);
-            if (patch.CreatorIp != creatorIp) return Forbid();
-
-            return await PatchManager.CompletePatch(_context, _cache, patch, requestDto.ImageMini, requestDto.Image);
+            return await PatchManager.CompletePatch(_context, _cache, requestDto.PatchId, requestDto.ImageMini, requestDto.Image);
         }
     }
 }

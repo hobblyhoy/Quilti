@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { fabric } from 'fabric';
 
-export function QuiltiCanvas({ color, width, drawMode, background, canvasState, setCanvasState }) {
+export function QuiltiCanvas({ color, width, drawMode, background, setHasInteractedWithCanvas }) {
    const [canvas, setCanvas] = useState();
-   const [eventListenerAttached, setEventListenerAttached] = useState(false);
 
    useEffect(() => {
       setCanvas(
@@ -15,6 +14,14 @@ export function QuiltiCanvas({ color, width, drawMode, background, canvasState, 
          })
       );
    }, []);
+
+   useEffect(() => {
+      if (canvas) {
+         canvas.on('mouse:up', event => {
+            setHasInteractedWithCanvas(true);
+         });
+      }
+   }, [canvas]);
 
    useEffect(() => {
       if (!canvas) return;

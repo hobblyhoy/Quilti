@@ -92,8 +92,8 @@ export function Counter() {
       //copnstruct an off-screen canvas for building a mini version of our image
       var fullSize = canvasEl.toDataURL();
       var imageRegular = canvasEl.toDataURL('image/jpeg', 0.5);
-      // resize for our mini
 
+      // resize for our mini
       var osCanvas = document.createElement('canvas');
       var osCtx = osCanvas.getContext('2d');
       osCanvas.width = 100;

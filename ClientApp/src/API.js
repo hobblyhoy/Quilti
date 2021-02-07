@@ -82,5 +82,13 @@ export async function api_reservePatch(patchId) {
    return resp.data;
 }
 
+export async function api_completePatch(patchId, image, imageMini) {
+   if (arguments.length !== 3) throw 'invalid args in api_completedPatch';
+   if (!patchId || !image || !imageMini) throw 'invalid args in api_completedPatch';
+
+   let resp = await axios.patch('/api/Patch/', { patchId, image, imageMini });
+   return resp.data;
+}
+
 // TODO we need some kind of global error handler here, we only have a few key events I
 //  think they could be tied all into the same kind of central notification system

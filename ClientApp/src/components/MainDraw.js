@@ -8,10 +8,11 @@ import { useParams, useHistory } from 'react-router-dom';
 import './Global.css';
 import { db_init } from '../DB';
 import { util_debugGrid, util_gridInitialize, util_patchCoordinatesFromPatchId, util_gridFirstOrDefault } from '../Utilities';
-import { api_getPatchIdsInRange, api_getPatchDec, api_getPatchImage } from '../API';
+import { api_getPatchIdsInRange, api_getPatchDec, api_getPatchImage, api_completePatch } from '../API';
 import { debounce } from 'lodash';
 import { WidthPicker } from './WidthPicker';
 import { ClearButton } from './ClearButton';
+import { DoneButton } from './DoneButton';
 
 export function MainDraw() {
    const { patchIdParam } = useParams();
@@ -21,11 +22,13 @@ export function MainDraw() {
    const [patchIdsInRange, setPatchIdsInRange] = useState(null);
    const [fullGrid, setFullGrid] = useState(null);
    const [isLoading, setIsLoading] = useState(true);
+   const history = useHistory();
    // Canvas
    const [color, setColor] = useState('#DB3E00');
    const [width, setWidth] = useState(43);
    const [drawMode, setDrawMode] = useState('Pencil');
    const [background, setBackground] = useState({ color: 'lightgray' });
+   const [hasInteractedWithCanvas, setHasInteractedWithCanvas] = useState(false);
 
    //// Init \\\\
    useEffect(() => {
@@ -64,6 +67,10 @@ export function MainDraw() {
                grid[patchDecInGridMeta.columnIndex][patchDecInGridMeta.rowIndex] = patchDecFromApi;
             })
          );
+
+         // Check if the patch we're supposed to be drawing is already completed (user might have hit back button after submitting)
+         if (grid[1][1].status === 'ACT') history.replace('/view/' + patchIdParam);
+
          console.log('Initial grid:');
          util_debugGrid(grid);
          console.log({ grid });
@@ -101,11 +108,31 @@ export function MainDraw() {
          window.removeEventListener('resize', resizeEventDebounced);
       };
    }, []);
-   // TODO paintbrush, pencil, etc
-   // TODO brush size
-   // TODO color picker
-   // TODO Clear button
-   // TODO Im Done! button
+
+   let save = async () => {
+      let canvasEl = document.getElementById('canvas');
+
+      //construct an off-screen canvas for building a mini version of our image
+      let imageUncompressed = canvasEl.toDataURL();
+      let image = canvasEl.toDataURL('image/jpeg', 0.5);
+
+      // Construct a placeholder image
+      let imageObj = new Image();
+      imageObj.src = imageUncompressed;
+      await imageObj.decode();
+
+      // convert out image object into a canvas, and compress it down
+      let miniCanvas = document.createElement('canvas');
+      let miniCtx = miniCanvas.getContext('2d');
+      miniCanvas.width = 100;
+      miniCanvas.height = 100;
+      miniCtx.drawImage(imageObj, 0, 0, 100, 100);
+      var imageMini = miniCanvas.toDataURL('image/jpeg', 0.1);
+
+      // Patch up the Patch
+      let respPatchId = await api_completePatch(patchIdParam, image, imageMini);
+      history.push('/view/' + respPatchId);
+   };
 
    //// Dynamic CSS styling / display aids \\\\
    let calculateFullGridClass = (column, row) => {
@@ -146,7 +173,16 @@ export function MainDraw() {
          <NavMenu>
             <NavItem>
                <NavLink href="#" className="text-dark">
-                  <ClearButton setBackground={setBackground} />
+                  <DoneButton save={save} hasInteractedWithCanvas={hasInteractedWithCanvas} />
+               </NavLink>
+            </NavItem>
+            <NavItem>
+               <NavLink href="#" className="text-dark">
+                  <ClearButton
+                     setBackground={setBackground}
+                     hasInteractedWithCanvas={hasInteractedWithCanvas}
+                     setHasInteractedWithCanvas={setHasInteractedWithCanvas}
+                  />
                </NavLink>
             </NavItem>
             <NavItem>
@@ -172,7 +208,14 @@ export function MainDraw() {
                      return column.map((patch, j) => {
                         return i === 1 && j == 1 ? (
                            // Our canvas
-                           <QuiltiCanvas key={patch.patchId} color={color} width={width} drawMode={drawMode} background={background} />
+                           <QuiltiCanvas
+                              key={patch.patchId}
+                              color={color}
+                              width={width}
+                              drawMode={drawMode}
+                              background={background}
+                              setHasInteractedWithCanvas={setHasInteractedWithCanvas}
+                           />
                         ) : (
                            // The 8 surrounding patches
                            <div key={patch.patchId} className={calculateFullGridClass(i, j)}>

@@ -7,11 +7,6 @@ namespace Quilti.Managers
 {
     public static class Helper
     {
-        //public static byte[] ToVarbinary(this string s)
-        //{
-        //    var split = s.Split(',', 1);
-        //    if ()
-        //}
         public static Coordinates PatchIdToCoordinates(string s)
         {
             var split = s.Split('x');
@@ -23,8 +18,8 @@ namespace Quilti.Managers
 
             return ret;
         }
-
     }
+
     public class Coordinates
     {
         public int X { get; set; }
