@@ -25,7 +25,6 @@ export function QuiltiCanvas({ color, width, drawMode, background, setHasInterac
 
    useEffect(() => {
       if (!canvas) return;
-      console.log({ color, width, drawMode });
 
       canvas.freeDrawingBrush = new fabric[drawMode + 'Brush'](canvas);
       canvas.freeDrawingBrush.color = color;

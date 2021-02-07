@@ -33,7 +33,6 @@ export function MainDraw() {
    //// Init \\\\
    useEffect(() => {
       (async () => {
-         console.log('init');
          if (!dbIsInitialized) {
             db_init();
             // only needed because of HMR, if this is a prod build we can pull it out
@@ -52,9 +51,6 @@ export function MainDraw() {
    useEffect(() => {
       if (!patchIdsInRange) return;
       (async () => {
-         console.log('surroundingPatchesList');
-         console.log({ surroundingPatchesList: patchIdsInRange });
-
          let pcfp = util_patchCoordinatesFromPatchId(patchIdParam);
          let grid = util_gridInitialize(3, 3, pcfp.x - 1, pcfp.y + 1);
          util_debugGrid(grid);
@@ -71,9 +67,7 @@ export function MainDraw() {
          // Check if the patch we're supposed to be drawing is already completed (user might have hit back button after submitting)
          if (grid[1][1].status === 'ACT') history.replace('/view/' + patchIdParam);
 
-         console.log('Initial grid:');
          util_debugGrid(grid);
-         console.log({ grid });
          setFullGrid(grid);
       })();
    }, [patchIdsInRange]);
@@ -89,7 +83,6 @@ export function MainDraw() {
             let image = await api_getPatchImage(patchDecMissingFullImage.patchId);
             patchDecMissingFullImage.src = image;
             patchDecMissingFullImage.status = 'full';
-            console.log('Updated full image on', patchDecMissingFullImage.patchId);
             setFullGrid([...fullGrid]);
 
             util_debugGrid(fullGrid);

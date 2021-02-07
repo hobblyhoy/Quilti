@@ -12,10 +12,6 @@ export function NavMenu(props) {
       setCollapsed(collapsed => !collapsed);
    };
 
-   let test = () => {
-      console.log('test');
-   };
-
    return (
       <header>
          <Navbar id="nav" className="navbar-expand-sm navbar-toggleable-sm ng-white border-bottom box-shadow" light>

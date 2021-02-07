@@ -15,10 +15,108 @@ namespace Quilti.Managers
 {
     public static class PatchManager
     {
-        public static Patch GetNextAvailablePatch(QuiltiContext context)
+        // We start from the origin patch (0x0) iteraritng out a ring of patches at a time until we find an empty patch
+        // We return the patch which neighbors it as our starting seed patch for the front end
+        public static Patch GetNextAvailablePatch(QuiltiContext context, IMemoryCache cache)
         {
-            //STUB
-            return context.Patches.First(p => p.ObjectStatus == ObjectStatus.Active);
+            // Pull the most recently requested Patch and extract out which ring it came from (or fall back to starting at 0)
+            var cacheKey = "mostRecentlyReturnedPatch";
+            var ringNumber = 0;
+            if (cache.TryGetValue(cacheKey, out Patch mostRecentlyReturnedPatch))
+            {
+                ringNumber = Math.Max(Math.Abs(mostRecentlyReturnedPatch.X), Math.Abs(mostRecentlyReturnedPatch.Y));
+            }
+
+
+
+            Patch returnPatch = null;
+            bool lastPatchFound = false;
+            while (!lastPatchFound)
+            {
+                // TODO check the query that runs on this to make sure EF isn't doing anything crazy
+                var currentRingPatches = context.Patches
+                    .Where(
+                        p => (
+                            (Math.Abs(p.X) == ringNumber || Math.Abs(p.Y) == ringNumber)
+                            && (Math.Abs(p.X) <= ringNumber && Math.Abs(p.Y) <= ringNumber)
+                        )
+                    )
+                    .ToList();
+
+                //TODO some kind of special case here for when we're on a brand new DB
+                if (currentRingPatches.Count == 0 && ringNumber == 0)
+                {
+                    throw new NotImplementedException();
+                }
+
+                // Each ring has more patches in it than the one before, do the math on how many patches this particular ring should have
+                // 0 - 1    // 1 - (3x3) - (1x1)    // 2 - (5x5) - (3x3)    // n - (2*n+1)^2 - (2*n-1)^2
+                var fullRingCount = (ringNumber == 0) ? 1 : Math.Pow(2 * ringNumber + 1, 2) - Math.Pow(2 * ringNumber - 1, 2);
+
+                if (currentRingPatches.Count == fullRingCount)
+                {
+                    // Our current ring is full, set the returnPatch now in case the next ring is empty
+                    returnPatch = currentRingPatches.First();
+                    ringNumber++;
+                }
+                else if (currentRingPatches.Count == 0)
+                {
+                    // Our current ring is empty, just get out now and we'll return with the first patch from the previous ring
+                    lastPatchFound = true;
+                }
+                else
+                {
+                    // Generate a list of all the potential patch Ids (filled or not) that exist in this ring
+                    // It's important we generate these in this particular order so that any given item is a geometric neighbor
+                    // to the one before and after
+                    var potentialPatchIds = new List<string>();
+                    var ringRange = Enumerable.Range(ringNumber * -1, ringNumber);
+
+                    // BIG TODO- both these sets of code suffer from the same problem
+                    //foreach (var i in ringRange)
+                    //{
+                    //    foreach (var j in ringRange)
+                    //    {
+                    //        potentialPatchIds.Add(i + "x" + j);
+                    //    }
+                    //}
+                    //potentialPatchIds = potentialPatchIds.Distinct().ToList();
+
+                    //for (int i = ringNumber * -1; i <= ringNumber; i++)
+                    //{
+                    //    for (int j = ringNumber * -1; j <= ringNumber; j++)
+                    //    {
+                    //        if (Math.Abs(i) != ringNumber && Math.Abs(j) != ringNumber) continue; // Skip the ones on the inside of our ring
+                    //        potentialPatchIds.Add(i + "x" + j);
+                    //    }
+                    //}
+
+                    // Iterate through the potential patch Ids and find the missing one, returning the patch before it
+                    // Making sure we've encountered at least one Patch in this ring first so we're not returning anything
+                    // on the previous ring
+                    var haveEncounteredPatch = false;
+                    foreach (var patchId in potentialPatchIds)
+                    {
+                        var nextInList = currentRingPatches.FirstOrDefault(p => p.PatchId == patchId);
+                        if (nextInList == null && haveEncounteredPatch)
+                        {
+                            lastPatchFound = true;
+                            break;
+                        }
+                        else if (nextInList != null)
+                        {
+                            returnPatch = nextInList;
+                            haveEncounteredPatch = true;
+                        }
+                    }
+
+                }
+            }
+
+            var cacheEntryOptions = new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromDays(7));
+            cache.Set(cacheKey, returnPatch, cacheEntryOptions);
+
+            return returnPatch;
         }
 
         public static Patch GetPatch(QuiltiContext context, IMemoryCache cache, string patchId)

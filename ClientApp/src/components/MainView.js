@@ -46,7 +46,6 @@ export function MainView() {
    // Stage 0 - Init \\
    useEffect(() => {
       (async () => {
-         console.log('init');
          if (!dbIsInitialized) {
             db_init();
             // only needed because of HMR, if this is a prod build we can pull it out
@@ -69,8 +68,6 @@ export function MainView() {
    useEffect(() => {
       if (!imageSize) return;
       (async () => {
-         console.log('imageSizeCallback');
-
          setMainAreaHeight(window.innerHeight - document.getElementById('nav').offsetHeight);
 
          let initialPatchDec;
@@ -102,8 +99,6 @@ export function MainView() {
    useEffect(() => {
       if (!fullGridCoordinates) return;
       (async () => {
-         console.log('fullGridCoordinatesCallback');
-
          let patchIdsInRangeAwaited = api_getPatchIdsInRange(
             fullGridCoordinates.leftX,
             fullGridCoordinates.rightX,
@@ -132,7 +127,6 @@ export function MainView() {
             })
          );
 
-         console.log('About to set fullGrid');
          util_debugGrid(grid);
          setFullGrid(grid);
       })();
@@ -149,7 +143,6 @@ export function MainView() {
             let image = await api_getPatchImage(patchDecMissingFullImage.patchId);
             patchDecMissingFullImage.src = image;
             patchDecMissingFullImage.status = 'full';
-            console.log('Updated full image on', patchDecMissingFullImage.patchId);
             setFullGrid([...fullGrid]);
 
             util_debugGrid(fullGrid);
@@ -162,7 +155,6 @@ export function MainView() {
       if (!gridLocationIsClickable(patch)) return;
 
       // TODO check for an error here, if we hit one display some kind of message about it already being reserved and retrigger the grid load
-      console.log({ patch });
       let reservedPatch = await api_reservePatch(patch.patchId);
       history.push('/draw/' + reservedPatch);
    };
@@ -175,7 +167,6 @@ export function MainView() {
       if (allowableGridRoom.gridColumns < 2 || allowableGridRoom.gridRows < 2) return;
 
       setIsLoading(true);
-      console.log('Changing image size from, to...', imageSize, newImageSize);
       setImageSize(newImageSize);
    };
 
@@ -205,8 +196,6 @@ export function MainView() {
    let resizeEventDebounced = debounce(() => {
       let fullGrid = util_extractReactState(setFullGrid);
       if (!fullGrid) return;
-
-      console.log('In resize event');
 
       let column = Math.floor(util_gridColumnCount(fullGrid) / 2);
       let row = Math.floor(util_gridRowCount(fullGrid) / 2);

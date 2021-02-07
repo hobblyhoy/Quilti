@@ -30,7 +30,7 @@ namespace Quilti.Controllers
         public async Task<PatchGetResponseDto> Get()
         {
             // With no ID provided we're just seeking out the next logical block to return as a starting point
-            return new PatchGetResponseDto(PatchManager.GetNextAvailablePatch(_context));
+            return new PatchGetResponseDto(PatchManager.GetNextAvailablePatch(_context, _cache));
         }
 
         [HttpGet("{patchId}")]
