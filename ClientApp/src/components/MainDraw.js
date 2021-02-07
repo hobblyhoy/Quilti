@@ -11,6 +11,7 @@ import { util_debugGrid, util_gridInitialize, util_patchCoordinatesFromPatchId, 
 import { api_getPatchIdsInRange, api_getPatchDec, api_getPatchImage } from '../API';
 import { debounce } from 'lodash';
 import { WidthPicker } from './WidthPicker';
+import { ClearButton } from './ClearButton';
 
 export function MainDraw() {
    const { patchIdParam } = useParams();
@@ -145,11 +146,7 @@ export function MainDraw() {
          <NavMenu>
             <NavItem>
                <NavLink href="#" className="text-dark">
-                  <div>
-                     {/* <button onClick={undo} disabled={canvasStateHistory.length < 2}>
-                        Undo
-                     </button> */}
-                  </div>
+                  <ClearButton setBackground={setBackground} />
                </NavLink>
             </NavItem>
             <NavItem>
