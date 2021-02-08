@@ -5,7 +5,6 @@ import { BrushPicker } from './BrushPicker';
 import { ColorPicker } from './ColorPicker';
 import { NavItem, NavLink } from 'reactstrap';
 import { useParams, useHistory } from 'react-router-dom';
-import './Global.css';
 import { db_init } from '../DB';
 import { util_debugGrid, util_gridInitialize, util_patchCoordinatesFromPatchId, util_gridFirstOrDefault } from '../Utilities';
 import { api_getPatchIdsInRange, api_getPatchDec, api_getPatchImage, api_completePatch } from '../API';

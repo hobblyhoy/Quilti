@@ -19,7 +19,6 @@ import {
    faSpinner,
 } from '@fortawesome/free-solid-svg-icons';
 import { db_init } from '../DB';
-import './Global.css';
 import { NavMenu } from './NavMenu';
 import { NavItem, NavLink } from 'reactstrap';
 import { useParams, useHistory } from 'react-router-dom';

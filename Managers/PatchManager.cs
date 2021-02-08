@@ -27,13 +27,10 @@ namespace Quilti.Managers
                 ringNumber = Math.Max(Math.Abs(mostRecentlyReturnedPatch.X), Math.Abs(mostRecentlyReturnedPatch.Y));
             }
 
-
-
             Patch returnPatch = null;
             bool lastPatchFound = false;
             while (!lastPatchFound)
             {
-                // TODO check the query that runs on this to make sure EF isn't doing anything crazy
                 var currentRingPatches = context.Patches
                     .Where(
                         p => (
@@ -70,26 +67,36 @@ namespace Quilti.Managers
                     // It's important we generate these in this particular order so that any given item is a geometric neighbor
                     // to the one before and after
                     var potentialPatchIds = new List<string>();
-                    var ringRange = Enumerable.Range(ringNumber * -1, ringNumber);
+                    var ringRange = Enumerable.Range(ringNumber * -1, ringNumber * 2 +1);
 
-                    // BIG TODO- both these sets of code suffer from the same problem
-                    //foreach (var i in ringRange)
-                    //{
-                    //    foreach (var j in ringRange)
-                    //    {
-                    //        potentialPatchIds.Add(i + "x" + j);
-                    //    }
-                    //}
-                    //potentialPatchIds = potentialPatchIds.Distinct().ToList();
+                    // Top row
+                    foreach (var i in ringRange)
+                    {
+                        var j = ringRange.Last();
+                        potentialPatchIds.Add(i + "x" + j);
+                    }
 
-                    //for (int i = ringNumber * -1; i <= ringNumber; i++)
-                    //{
-                    //    for (int j = ringNumber * -1; j <= ringNumber; j++)
-                    //    {
-                    //        if (Math.Abs(i) != ringNumber && Math.Abs(j) != ringNumber) continue; // Skip the ones on the inside of our ring
-                    //        potentialPatchIds.Add(i + "x" + j);
-                    //    }
-                    //}
+                    // Right column
+                    foreach (var j in ringRange.Reverse())
+                    {
+                        var i = ringRange.Last();
+                        potentialPatchIds.Add(i + "x" + j);
+                    }
+                    // Bottom row
+                    foreach (var i in ringRange.Reverse())
+                    {
+                        var j = ringRange.First();
+                        potentialPatchIds.Add(i + "x" + j);
+                    }
+                    // Left Column
+                    foreach (var j in ringRange)
+                    {
+                        var i = ringRange.First();
+                        potentialPatchIds.Add(i + "x" + j);
+                    }
+
+                    potentialPatchIds = potentialPatchIds.Distinct().ToList();
+
 
                     // Iterate through the potential patch Ids and find the missing one, returning the patch before it
                     // Making sure we've encountered at least one Patch in this ring first so we're not returning anything
