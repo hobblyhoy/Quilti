@@ -1,6 +1,5 @@
 import axios from 'axios';
 import { db_patchImage_get, db_patchImage_insertSafe, db_patch_get, db_patch_insertSafe } from './DB';
-
 import { util_createEmptyPatchDecFromPatchId, util_createPatchDecFromPatch } from './Utilities';
 
 // This layer is responsible for all requests to the server and getting/storing in indexedDb when appropriate
@@ -22,11 +21,18 @@ import { util_createEmptyPatchDecFromPatchId, util_createPatchDecFromPatch } fro
 // x int
 // y int
 // src string
-// status string (new, empty, reserved, partial, full)
-// TODO revisit this, it may never make sense to have a "new" status
+// status string (empty, reserved, partial, full)
 // PatchDec status is similar but different from the db based statuses in that these contain extra states
-// (new, empty, partial, full) so we can add in empty patches in our grid and to track it's progress
+// (empty, partial, full) so we can add in empty patches in our grid and to track it's progress
 // through the app when applying full size images (partial // full)
+
+axios.interceptors.response.use(
+   response => response,
+   error => {
+      window.QuiltiError(error.response.status);
+      return Promise.reject(error);
+   }
+);
 
 export async function api_getInitialPatchDec() {
    if (arguments.length !== 0) throw 'invalid args in api_getInitialPatchDec';
@@ -89,6 +95,3 @@ export async function api_completePatch(patchId, image, imageMini) {
    let resp = await axios.patch('/api/Patch/', { patchId, image, imageMini });
    return resp.data;
 }
-
-// TODO we need some kind of global error handler here, we only have a few key events I
-//  think they could be tied all into the same kind of central notification system

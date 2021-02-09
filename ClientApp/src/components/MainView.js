@@ -153,7 +153,6 @@ export function MainView() {
    let patchClick = async patch => {
       if (!gridLocationIsClickable(patch)) return;
 
-      // TODO check for an error here, if we hit one display some kind of message about it already being reserved and retrigger the grid load
       let reservedPatch = await api_reservePatch(patch.patchId);
       history.push('/draw/' + reservedPatch);
    };

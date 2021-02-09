@@ -165,31 +165,23 @@ export function MainDraw() {
          <NavMenu>
             <NavItem>
                <NavLink href="#" className="text-dark">
-                  <DoneButton save={save} hasInteractedWithCanvas={hasInteractedWithCanvas} />
+                  <div style={{ display: 'flex' }}>
+                     <DoneButton save={save} hasInteractedWithCanvas={hasInteractedWithCanvas} />
+                     <ClearButton
+                        setBackground={setBackground}
+                        hasInteractedWithCanvas={hasInteractedWithCanvas}
+                        setHasInteractedWithCanvas={setHasInteractedWithCanvas}
+                     />
+                  </div>
                </NavLink>
             </NavItem>
             <NavItem>
                <NavLink href="#" className="text-dark">
-                  <ClearButton
-                     setBackground={setBackground}
-                     hasInteractedWithCanvas={hasInteractedWithCanvas}
-                     setHasInteractedWithCanvas={setHasInteractedWithCanvas}
-                  />
-               </NavLink>
-            </NavItem>
-            <NavItem>
-               <NavLink href="#" className="text-dark">
-                  <ColorPicker color={color} setColor={setColor} />
-               </NavLink>
-            </NavItem>
-            <NavItem>
-               <NavLink href="#" className="text-dark">
-                  <BrushPicker drawMode={drawMode} setDrawMode={setDrawMode} />
-               </NavLink>
-            </NavItem>
-            <NavItem>
-               <NavLink href="#" className="text-dark">
-                  <WidthPicker width={width} setWidth={setWidth} />
+                  <div style={{ display: 'flex' }}>
+                     <ColorPicker color={color} setColor={setColor} />
+                     <BrushPicker drawMode={drawMode} setDrawMode={setDrawMode} />
+                     <WidthPicker width={width} setWidth={setWidth} />
+                  </div>
                </NavLink>
             </NavItem>
          </NavMenu>

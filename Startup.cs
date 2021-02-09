@@ -72,11 +72,13 @@ namespace Quilti
                 }
             });
 
-            //Migrate DB
+            // DB migration and data setup
             using (var serviceScope = app.ApplicationServices.GetService<IServiceScopeFactory>().CreateScope())
             {
                 var context = serviceScope.ServiceProvider.GetRequiredService<QuiltiContext>();
                 context.Database.Migrate();
+
+                DbDataInit.Init(context);
             }
         }
     }

@@ -1,3 +1,7 @@
+a.navbar-brand {
+   color: #DB3E00 !important;
+}
+
 .align-center{
    display: flex;
    align-items: center;
@@ -58,9 +62,12 @@ button:hover {
    display: grid;
    grid-template-columns: 500px 500px 500px;
    grid-template-rows: 500px 500px 500px;
-   /* TODO eventually can use this css zoom for some dead simple mobile support.. should I decide to support it */
-   /* zoom: 50%; */
 }
+@media only screen and (max-width: 600px) {
+   .layout-container {
+      zoom: 50%;
+   }
+ }
 
 .grid-right-align {
    justify-self: end;

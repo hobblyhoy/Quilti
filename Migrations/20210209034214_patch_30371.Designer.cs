@@ -10,8 +10,8 @@ using Quilti.DAL;
 namespace Quilti.Migrations
 {
     [DbContext(typeof(QuiltiContext))]
-    [Migration("20210207033147_patch_21084")]
-    partial class patch_21084
+    [Migration("20210209034214_patch_30371")]
+    partial class patch_30371
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
