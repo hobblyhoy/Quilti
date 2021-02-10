@@ -153,8 +153,15 @@ export function MainView() {
    let patchClick = async patch => {
       if (!gridLocationIsClickable(patch)) return;
 
-      let reservedPatch = await api_reservePatch(patch.patchId);
-      history.push('/draw/' + reservedPatch);
+      try {
+         let reservedPatch = await api_reservePatch(patch.patchId);
+         history.push('/draw/' + reservedPatch);
+      } catch (error) {
+         if (error.response.status === 409) {
+            // User tried to hit a patch that was already reserved, refresh the grid
+            setFullGridCoordinates(fullGridCoordinates => ({ ...fullGridCoordinates }));
+         }
+      }
    };
 
    let imageSizeAdjustClick = factor => {

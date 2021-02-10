@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { fabric } from 'fabric';
 
-export function QuiltiCanvas({ color, width, drawMode, background, setHasInteractedWithCanvas }) {
+export function QuiltiCanvas({ color, width, drawMode, background, setHasInteractedWithCanvas, size }) {
    const [canvas, setCanvas] = useState();
 
    useEffect(() => {
       setCanvas(
          new fabric.Canvas('canvas', {
-            width: 500,
-            height: 500,
+            width: size,
+            height: size,
             backgroundColor: background.color,
             isDrawingMode: true,
          })

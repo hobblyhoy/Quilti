@@ -55,7 +55,7 @@ namespace Quilti.Controllers
         public async Task<ActionResult<string>> Patch(PatchPatchRequestDto requestDto) // lol
         {
             var creatorIp = HttpContext.Connection.RemoteIpAddress.ToString();
-            if (!PatchManager.PatchExists(_context, requestDto.PatchId)) return Conflict();
+            if (!PatchManager.PatchExists(_context, requestDto.PatchId)) return NotFound();
             if (CreatorManager.UserHasHitCreateCap(_context, _cache, creatorIp)) return StatusCode(403);
             if (!PatchManager.PatchMatchesCreator(_context, _cache, requestDto.PatchId, creatorIp)) return StatusCode(403);
 

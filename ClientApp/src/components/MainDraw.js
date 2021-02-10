@@ -22,9 +22,10 @@ export function MainDraw() {
    const [fullGrid, setFullGrid] = useState(null);
    const [isLoading, setIsLoading] = useState(true);
    const history = useHistory();
+   const [patchSize, setPatchSize] = useState(null);
    // Canvas
    const [color, setColor] = useState('#DB3E00');
-   const [width, setWidth] = useState(43);
+   const [width, setWidth] = useState(null);
    const [drawMode, setDrawMode] = useState('Pencil');
    const [background, setBackground] = useState({ color: 'lightgray' });
    const [hasInteractedWithCanvas, setHasInteractedWithCanvas] = useState(false);
@@ -40,6 +41,13 @@ export function MainDraw() {
 
          setMainAreaHeight(window.innerHeight - document.getElementById('nav').offsetHeight);
          setMainAreaWidth(window.innerWidth);
+         if (window.innerWidth > 500) {
+            setPatchSize(500);
+            setWidth(43);
+         } else {
+            setPatchSize(300);
+            setWidth(23);
+         }
 
          let pcfp = util_patchCoordinatesFromPatchId(patchIdParam);
          setPatchIdsInRange(await api_getPatchIdsInRange(pcfp.x - 1, pcfp.x + 1, pcfp.y + 1, pcfp.y - 1));
@@ -160,6 +168,14 @@ export function MainDraw() {
       return ret;
    };
 
+   let calculateLayoutContainerStyle = () => {
+      return {
+         display: 'grid',
+         gridTemplateColumns: `${patchSize}px ${patchSize}px ${patchSize}px`,
+         gridTemplateRows: `${patchSize}px ${patchSize}px ${patchSize}px`,
+      };
+   };
+
    return (
       <div>
          <NavMenu>
@@ -177,38 +193,43 @@ export function MainDraw() {
             </NavItem>
             <NavItem>
                <NavLink href="#" className="text-dark">
-                  <div style={{ display: 'flex' }}>
-                     <ColorPicker color={color} setColor={setColor} />
-                     <BrushPicker drawMode={drawMode} setDrawMode={setDrawMode} />
-                     <WidthPicker width={width} setWidth={setWidth} />
-                  </div>
+                  {color && drawMode && width && (
+                     <div style={{ display: 'flex' }}>
+                        <ColorPicker color={color} setColor={setColor} />
+                        <BrushPicker drawMode={drawMode} setDrawMode={setDrawMode} />
+                        <WidthPicker width={width} setWidth={setWidth} />
+                     </div>
+                  )}
                </NavLink>
             </NavItem>
          </NavMenu>
          <div className="force-center" style={{ height: mainAreaHeight + 'px', width: mainAreaWidth + 'px' }}>
-            <div className="layout-container">
-               {fullGrid &&
-                  fullGrid.map((column, i) => {
-                     return column.map((patch, j) => {
-                        return i === 1 && j == 1 ? (
-                           // Our canvas
-                           <QuiltiCanvas
-                              key={patch.patchId}
-                              color={color}
-                              width={width}
-                              drawMode={drawMode}
-                              background={background}
-                              setHasInteractedWithCanvas={setHasInteractedWithCanvas}
-                           />
-                        ) : (
-                           // The 8 surrounding patches
-                           <div key={patch.patchId} className={calculateFullGridClass(i, j)}>
-                              <img src={patch.src} />
-                           </div>
-                        );
-                     });
-                  })}
-            </div>
+            {color && width && drawMode && background && patchSize && (
+               <div style={calculateLayoutContainerStyle()}>
+                  {fullGrid &&
+                     fullGrid.map((column, i) => {
+                        return column.map((patch, j) => {
+                           return i === 1 && j == 1 ? (
+                              // Our canvas
+                              <QuiltiCanvas
+                                 key={patch.patchId}
+                                 color={color}
+                                 width={width}
+                                 drawMode={drawMode}
+                                 background={background}
+                                 size={patchSize}
+                                 setHasInteractedWithCanvas={setHasInteractedWithCanvas}
+                              />
+                           ) : (
+                              // The 8 surrounding patches
+                              <div key={patch.patchId} className={calculateFullGridClass(i, j)}>
+                                 <img src={patch.src} />
+                              </div>
+                           );
+                        });
+                     })}
+               </div>
+            )}
          </div>
       </div>
    );

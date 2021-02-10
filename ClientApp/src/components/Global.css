@@ -58,16 +58,6 @@ button:hover {
    align-items: center;
    overflow: hidden;
 }
-.layout-container {
-   display: grid;
-   grid-template-columns: 500px 500px 500px;
-   grid-template-rows: 500px 500px 500px;
-}
-@media only screen and (max-width: 600px) {
-   .layout-container {
-      zoom: 50%;
-   }
- }
 
 .grid-right-align {
    justify-self: end;

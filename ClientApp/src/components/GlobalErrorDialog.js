@@ -13,7 +13,8 @@ export default function GlobalErrorDialog() {
 
    const errorText = {
       403: 'We only allow you to create a limited number of Patches per hour. Try again later!',
-      409: 'Oops, there was a problem working with this patch of the quilt right now. Please refresh or try a different patch.',
+      404: "Oops, we couldn't find that Patch right now. You might have timed out- you must finish your patch within 1 hour.",
+      409: 'Oops, someone else is working on that patch right now. Try another one.',
    };
 
    useEffect(() => {
