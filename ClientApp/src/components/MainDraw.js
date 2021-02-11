@@ -12,6 +12,7 @@ import { debounce } from 'lodash';
 import { WidthPicker } from './WidthPicker';
 import { ClearButton } from './ClearButton';
 import { DoneButton } from './DoneButton';
+import { UndoButton } from './UndoButton';
 
 export function MainDraw() {
    const { patchIdParam } = useParams();
@@ -29,6 +30,8 @@ export function MainDraw() {
    const [drawMode, setDrawMode] = useState('Pencil');
    const [background, setBackground] = useState({ color: 'lightgray' });
    const [hasInteractedWithCanvas, setHasInteractedWithCanvas] = useState(false);
+   const [canvasState, setCanvasState] = useState(null);
+   const [canvasStateHistory, setCanvasStateHistory] = useState([]);
 
    //// Init \\\\
    useEffect(() => {
@@ -134,6 +137,18 @@ export function MainDraw() {
       history.push('/view/' + respPatchId);
    };
 
+   let undo = () => {
+      canvasStateHistory.pop(); //throw away the current state of the canvas
+      let previousState = canvasStateHistory.pop();
+      setCanvasState(previousState);
+   };
+   useEffect(() => {
+      if (!canvasState) return;
+
+      let historyItemsToKeep = 1;
+      setCanvasStateHistory(canvasStateHistory => [...canvasStateHistory.slice(historyItemsToKeep * -1), canvasState]);
+   }, [canvasState]);
+
    //// Dynamic CSS styling / display aids \\\\
    let calculateFullGridClass = (column, row) => {
       let ret = '';
@@ -188,6 +203,7 @@ export function MainDraw() {
                         hasInteractedWithCanvas={hasInteractedWithCanvas}
                         setHasInteractedWithCanvas={setHasInteractedWithCanvas}
                      />
+                     <UndoButton undo={undo} canvasStateHistory={canvasStateHistory} />
                   </div>
                </NavLink>
             </NavItem>
@@ -219,6 +235,8 @@ export function MainDraw() {
                                  background={background}
                                  size={patchSize}
                                  setHasInteractedWithCanvas={setHasInteractedWithCanvas}
+                                 canvasState={canvasState}
+                                 setCanvasState={setCanvasState}
                               />
                            ) : (
                               // The 8 surrounding patches

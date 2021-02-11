@@ -26,7 +26,7 @@ button {
    background-color: initial;
    transition: all ease 500ms;
 }
-button:hover {
+.button:hover {
    background-color: lightgray;
 }
 

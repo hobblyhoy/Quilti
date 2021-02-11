@@ -6,6 +6,8 @@ import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrashAlt } from '@fortawesome/free-solid-svg-icons';
+import Tooltip from '@material-ui/core/Tooltip';
+import { TooltipButton } from './TooltipButton';
 
 export function ClearButton({ setBackground, hasInteractedWithCanvas, setHasInteractedWithCanvas }) {
    const [isOpen, setIsOpen] = useState(false);
@@ -18,9 +20,16 @@ export function ClearButton({ setBackground, hasInteractedWithCanvas, setHasInte
 
    return (
       <div>
-         <button onClick={() => setIsOpen(true)} disabled={!hasInteractedWithCanvas}>
+         {/* <Tooltip title="Clear All" arrow>
+            <span onClick={() => setIsOpen(true)}>
+               <button disabled={!hasInteractedWithCanvas} style={{ pointerEvents: 'none' }}>
+                  <FontAwesomeIcon icon={faTrashAlt} />
+               </button>
+            </span>
+         </Tooltip> */}
+         <TooltipButton tooltip="Clear All" onClick={() => setIsOpen(true)} disabled={!hasInteractedWithCanvas}>
             <FontAwesomeIcon icon={faTrashAlt} />
-         </button>
+         </TooltipButton>
          <Dialog
             open={isOpen}
             onClose={() => setIsOpen(false)}

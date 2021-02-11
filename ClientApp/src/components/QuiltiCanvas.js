@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { fabric } from 'fabric';
 
-export function QuiltiCanvas({ color, width, drawMode, background, setHasInteractedWithCanvas, size }) {
+export function QuiltiCanvas({ color, width, drawMode, background, setHasInteractedWithCanvas, size, canvasState, setCanvasState }) {
    const [canvas, setCanvas] = useState();
+   const [eventListenerAttached, setEventListenerAttached] = useState(false);
 
    useEffect(() => {
       setCanvas(
@@ -16,12 +17,22 @@ export function QuiltiCanvas({ color, width, drawMode, background, setHasInterac
    }, []);
 
    useEffect(() => {
-      if (canvas) {
+      if (canvas && !eventListenerAttached) {
          canvas.on('mouse:up', event => {
             setHasInteractedWithCanvas(true);
+            setCanvasState(JSON.stringify(canvas));
          });
+         setCanvasState(JSON.stringify(canvas));
+         setEventListenerAttached(true);
       }
    }, [canvas]);
+
+   useEffect(() => {
+      // If we've been pipped in a new canvasState then apply it
+      if (canvas && canvasState) {
+         canvas.loadFromJSON(canvasState, () => canvas.renderAll());
+      }
+   }, [canvasState]);
 
    useEffect(() => {
       if (!canvas) return;
