@@ -223,7 +223,7 @@ export function MainDraw() {
                            ) : (
                               // The 8 surrounding patches
                               <div key={patch.patchId} className={calculateFullGridClass(i, j)}>
-                                 <img src={patch.src} />
+                                 <img src={patch.src} width={patchSize + 'px'} height={patchSize + 'px'} />
                               </div>
                            );
                         });

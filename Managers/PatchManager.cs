@@ -19,13 +19,9 @@ namespace Quilti.Managers
         // We return the patch which neighbors it as our starting seed patch for the front end
         public static Patch GetNextAvailablePatch(QuiltiContext context, IMemoryCache cache)
         {
-            // Pull the most recently requested Patch and extract out which ring it came from (or fall back to starting at 0)
-            var cacheKey = "mostRecentlyReturnedPatch";
-            var ringNumber = 0;
-            if (cache.TryGetValue(cacheKey, out Patch mostRecentlyReturnedPatch))
-            {
-                ringNumber = Math.Max(Math.Abs(mostRecentlyReturnedPatch.X), Math.Abs(mostRecentlyReturnedPatch.Y));
-            }
+            // Pull out the last ringNumber used (or fall back to starting at 0)
+            var cacheKey = "lastRingNumber";
+            cache.TryGetValue(cacheKey, out int ringNumber);
 
             Patch returnPatch = null;
             bool lastPatchFound = false;
@@ -39,12 +35,6 @@ namespace Quilti.Managers
                         )
                     )
                     .ToList();
-
-                //TODO some kind of special case here for when we're on a brand new DB
-                if (currentRingPatches.Count == 0 && ringNumber == 0)
-                {
-                    throw new NotImplementedException();
-                }
 
                 // Each ring has more patches in it than the one before, do the math on how many patches this particular ring should have
                 // 0 - 1    // 1 - (3x3) - (1x1)    // 2 - (5x5) - (3x3)    // n - (2*n+1)^2 - (2*n-1)^2
@@ -67,7 +57,7 @@ namespace Quilti.Managers
                     // It's important we generate these in this particular order so that any given item is a geometric neighbor
                     // to the one before and after
                     var potentialPatchIds = new List<string>();
-                    var ringRange = Enumerable.Range(ringNumber * -1, ringNumber * 2 +1);
+                    var ringRange = Enumerable.Range(ringNumber * -1, ringNumber * 2 + 1);
 
                     // Top row
                     foreach (var i in ringRange)
@@ -120,8 +110,7 @@ namespace Quilti.Managers
                 }
             }
 
-            var cacheEntryOptions = new MemoryCacheEntryOptions().SetSlidingExpiration(TimeSpan.FromDays(7));
-            cache.Set(cacheKey, returnPatch, cacheEntryOptions);
+            cache.Set(cacheKey, ringNumber, TimeSpan.FromDays(7));
 
             return returnPatch;
         }
