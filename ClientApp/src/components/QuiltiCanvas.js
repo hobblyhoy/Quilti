@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { fabric } from 'fabric';
+import blankCanvas from '../assets/blankCanvas';
 
-export function QuiltiCanvas({ color, width, drawMode, background, setHasInteractedWithCanvas, size, canvasState, setCanvasStateHistory }) {
+export function QuiltiCanvas({ color, width, drawMode, background, size, canvasState, setCanvasStateHistory, canvasRef }) {
    const [canvas, setCanvas] = useState();
    const [eventListenerAttached, setEventListenerAttached] = useState(false);
 
@@ -18,17 +19,18 @@ export function QuiltiCanvas({ color, width, drawMode, background, setHasInterac
 
    useEffect(() => {
       if (canvas && !eventListenerAttached) {
+         canvasRef.current = canvas;
          canvas.on('mouse:up', event => {
-            setHasInteractedWithCanvas(true);
-            // Wait for next tick so we can guarantee we're not grabbing an old state as toDataURL sometimes will
+            canvas.renderAll();
+            // Wait for next tick as the new path the user just draw has not been rendered onto the canvas yet
             setTimeout(() => {
-               let canvasImage = document.getElementById('canvas').toDataURL();
-               let historyItemsToKeep = 256; //equates to about 10mb cap in memory usage
+               let canvasImage = canvas.toDataURL();
+               let historyItemsToKeep = 128; //equates to about 10mb cap in memory usage
                setCanvasStateHistory(canvasStateHistory => [...canvasStateHistory.slice(historyItemsToKeep * -1), canvasImage]);
             }, 0);
          });
          // Assign initial, blank state
-         setTimeout(() => setCanvasStateHistory([document.getElementById('canvas').toDataURL()]), 0);
+         setTimeout(() => setCanvasStateHistory([blankCanvas]), 0);
          setEventListenerAttached(true);
       }
    }, [canvas]);
@@ -37,7 +39,7 @@ export function QuiltiCanvas({ color, width, drawMode, background, setHasInterac
       // If we've been pipped in a new canvasState then apply it
       if (canvas && canvasState && canvasState.state) {
          fabric.Image.fromURL(canvasState.state, img => {
-            img.set({ left: 0, top: 0 });
+            img.set({ left: 0, top: 0, width: size, height: size });
             canvas.add(img);
          });
       }
@@ -57,7 +59,7 @@ export function QuiltiCanvas({ color, width, drawMode, background, setHasInterac
 
       canvas.clear();
       canvas.setBackgroundColor(background.color);
-      setTimeout(() => setCanvasStateHistory([document.getElementById('canvas').toDataURL()]), 0);
+      setTimeout(() => setCanvasStateHistory([blankCanvas]), 0);
    }, [background]);
 
    return <canvas id="canvas"></canvas>;

@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useRef, useState } from 'react';
 import { NavMenu } from './NavMenu';
 import { QuiltiCanvas } from './QuiltiCanvas';
 import { BrushPicker } from './BrushPicker';
@@ -29,9 +29,9 @@ export function MainDraw() {
    const [width, setWidth] = useState(null);
    const [drawMode, setDrawMode] = useState('Pencil');
    const [background, setBackground] = useState({ color: 'lightgray' });
-   const [hasInteractedWithCanvas, setHasInteractedWithCanvas] = useState(false);
    const [canvasState, setCanvasState] = useState({});
    const [canvasStateHistory, setCanvasStateHistory] = useState([]);
+   const canvasRef = useRef();
 
    //// Init \\\\
    useEffect(() => {
@@ -113,24 +113,35 @@ export function MainDraw() {
    }, []);
 
    let save = async () => {
-      let canvasEl = document.getElementById('canvas');
+      // Two known library issues here that continue to bite me-
+      // You cant use the fabric canvas (canvasRef) for toDataUrl to render it as a compressed jpg, it simply doesn't work. The uncompressed png is fine.
+      // You cant use document.getElementById('canvas') because this will grab a version of the canvas scaled by the window.devicePixelRatio.
+      // Best solution I have is to construct two custom sized image objects which we then pull into a new canvas and do a toDataUrl on those.
+      // Canvas is tricky mannnn...
 
-      //construct an off-screen canvas for building a mini version of our image
-      let imageUncompressed = canvasEl.toDataURL();
-      let image = canvasEl.toDataURL('image/jpeg', 0.5);
+      // Pull in the uncompressed png from canvas, this should be immune to dpi scaling issues
+      let imageUncompressed = canvasRef.current.toDataURL();
 
       // Construct a placeholder image
       let imageObj = new Image();
       imageObj.src = imageUncompressed;
       await imageObj.decode();
 
-      // convert out image object into a canvas, and compress it down
+      // convert out image object into a canvas, and compress it down for the mini image
       let miniCanvas = document.createElement('canvas');
       let miniCtx = miniCanvas.getContext('2d');
       miniCanvas.width = 100;
       miniCanvas.height = 100;
       miniCtx.drawImage(imageObj, 0, 0, 100, 100);
-      var imageMini = miniCanvas.toDataURL('image/jpeg', 0.1);
+      let imageMini = miniCanvas.toDataURL('image/jpeg', 0.1);
+
+      // Do the same for the medium sized image
+      let mediumCanvas = document.createElement('canvas');
+      let mediumCtx = mediumCanvas.getContext('2d');
+      mediumCanvas.width = patchSize;
+      mediumCanvas.height = patchSize;
+      mediumCtx.drawImage(imageObj, 0, 0, patchSize, patchSize);
+      let image = mediumCanvas.toDataURL('image/jpeg', 0.5);
 
       // Patch up the Patch
       let respPatchId = await api_completePatch(patchIdParam, image, imageMini);
@@ -144,9 +155,12 @@ export function MainDraw() {
       setCanvasState({ state: previousState });
    };
 
+   useEffect(() => {
+      console.log({ canvasStateHistory });
+   }, [canvasStateHistory]);
+
    let clear = () => {
       setBackground(background => ({ ...background }));
-      setHasInteractedWithCanvas(false);
    };
 
    //// Dynamic CSS styling / display aids \\\\
@@ -230,9 +244,9 @@ export function MainDraw() {
                                  drawMode={drawMode}
                                  background={background}
                                  size={patchSize}
-                                 setHasInteractedWithCanvas={setHasInteractedWithCanvas}
                                  canvasState={canvasState}
                                  setCanvasStateHistory={setCanvasStateHistory}
+                                 canvasRef={canvasRef}
                               />
                            ) : (
                               // The 8 surrounding patches
