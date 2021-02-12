@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Slider } from 'office-ui-fabric-react/lib/Slider';
-import Tooltip from '@material-ui/core/Tooltip';
+import ReactTooltip from 'react-tooltip';
 
 export function WidthPicker({ width, setWidth }) {
    return (
-      <Tooltip title={`Brush Width (${width - 3})`} arrow>
-         <div style={{ width: '120px' }}>
+      <>
+         <div style={{ width: '120px' }} data-tip data-for="Width">
             <Slider
                min={3}
                max={83}
@@ -16,6 +16,9 @@ export function WidthPicker({ width, setWidth }) {
                showValue={false}
             />
          </div>
-      </Tooltip>
+         <ReactTooltip id="Width" place="bottom" type="dark" effect="solid" offset={{ bottom: 10 }}>
+            <span>Width ({width - 3})</span>
+         </ReactTooltip>
+      </>
    );
 }

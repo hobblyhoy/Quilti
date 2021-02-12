@@ -24,6 +24,7 @@ import { NavItem, NavLink } from 'reactstrap';
 import { useParams, useHistory } from 'react-router-dom';
 import { api_getInitialPatchDec, api_getPatchDec, api_getPatchIdsInRange, api_getPatchImage, api_reservePatch } from '../API';
 import { debounce } from 'lodash';
+import { TooltipButton } from './TooltipButton';
 
 export function MainView() {
    const [dbIsInitialized, setDbIsInitialized] = useState(false);
@@ -246,13 +247,20 @@ export function MainView() {
       <div>
          <NavMenu>
             <NavItem>
-               <NavLink href="#" className="text-dark" onClick={() => imageSizeAdjustClick(1)}>
+               {/* <NavLink href="#" className="text-dark" onClick={() => imageSizeAdjustClick(1)}>
                   <FontAwesomeIcon icon={faPlus} />
+               </NavLink> */}
+               <NavLink href="#" className="text-dark">
+                  <TooltipButton tooltip="Zoom In" onClick={() => imageSizeAdjustClick(1)}>
+                     <FontAwesomeIcon icon={faPlus} />
+                  </TooltipButton>
                </NavLink>
             </NavItem>
             <NavItem>
-               <NavLink href="#" className="text-dark" onClick={() => imageSizeAdjustClick(-1)}>
-                  <FontAwesomeIcon icon={faMinus} />
+               <NavLink href="#" className="text-dark">
+                  <TooltipButton tooltip="Zoom Out" onClick={() => imageSizeAdjustClick(-1)}>
+                     <FontAwesomeIcon icon={faMinus} />
+                  </TooltipButton>
                </NavLink>
             </NavItem>
          </NavMenu>

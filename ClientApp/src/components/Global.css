@@ -25,25 +25,34 @@ button {
    border: 0;
    background-color: initial;
    transition: all ease 500ms;
+   border-radius: 5px;
 }
-.button:hover {
+button:hover:enabled {
    background-color: lightgray;
 }
 
 .button-up {
    border-top-left-radius: 15px;
    border-top-right-radius: 15px;
+   border-bottom-left-radius: 0;
+   border-bottom-right-radius: 0;
 }
 .button-down {
+   border-top-left-radius: 0;
+   border-top-right-radius: 0;
    border-bottom-left-radius: 15px;
    border-bottom-right-radius: 15px;
 }
 .button-left {
    border-top-left-radius: 15px;
+   border-top-right-radius: 0;
    border-bottom-left-radius: 15px;
+   border-bottom-right-radius: 0;
 }
 .button-right {
+   border-top-left-radius: 0;
    border-top-right-radius: 15px;
+   border-bottom-left-radius: 0;
    border-bottom-right-radius: 15px;
 }
 
