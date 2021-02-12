@@ -144,6 +144,11 @@ export function MainDraw() {
       setCanvasState({ state: previousState });
    };
 
+   let clear = () => {
+      setBackground(background => ({ ...background }));
+      setHasInteractedWithCanvas(false);
+   };
+
    //// Dynamic CSS styling / display aids \\\\
    let calculateFullGridClass = (column, row) => {
       let ret = '';
@@ -192,13 +197,9 @@ export function MainDraw() {
             <NavItem>
                <NavLink href="#" className="text-dark">
                   <div style={{ display: 'flex' }}>
-                     <DoneButton save={save} hasInteractedWithCanvas={hasInteractedWithCanvas} />
-                     <ClearButton
-                        setBackground={setBackground}
-                        hasInteractedWithCanvas={hasInteractedWithCanvas}
-                        setHasInteractedWithCanvas={setHasInteractedWithCanvas}
-                     />
-                     <UndoButton undo={undo} canvasStateHistory={canvasStateHistory} />
+                     <DoneButton save={save} disabled={canvasStateHistory.length < 2} />
+                     <ClearButton clear={clear} disabled={canvasStateHistory.length < 2} />
+                     <UndoButton undo={undo} disabled={canvasStateHistory.length < 2} />
                   </div>
                </NavLink>
             </NavItem>

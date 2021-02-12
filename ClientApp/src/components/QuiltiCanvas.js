@@ -23,7 +23,7 @@ export function QuiltiCanvas({ color, width, drawMode, background, setHasInterac
             // Wait for next tick so we can guarantee we're not grabbing an old state as toDataURL sometimes will
             setTimeout(() => {
                let canvasImage = document.getElementById('canvas').toDataURL();
-               let historyItemsToKeep = 10;
+               let historyItemsToKeep = 256; //equates to about 10mb cap in memory usage
                setCanvasStateHistory(canvasStateHistory => [...canvasStateHistory.slice(historyItemsToKeep * -1), canvasImage]);
             }, 0);
          });
@@ -53,10 +53,11 @@ export function QuiltiCanvas({ color, width, drawMode, background, setHasInterac
    }, [color, width, drawMode, canvas]);
 
    useEffect(() => {
-      if (!canvas) return;
+      if (!canvas || !background) return;
 
       canvas.clear();
       canvas.setBackgroundColor(background.color);
+      setTimeout(() => setCanvasStateHistory([document.getElementById('canvas').toDataURL()]), 0);
    }, [background]);
 
    return <canvas id="canvas"></canvas>;

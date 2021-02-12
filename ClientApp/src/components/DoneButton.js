@@ -6,10 +6,9 @@ import DialogContentText from '@material-ui/core/DialogContentText';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSave } from '@fortawesome/free-solid-svg-icons';
-import Tooltip from '@material-ui/core/Tooltip';
 import { TooltipButton } from './TooltipButton';
 
-export function DoneButton({ save, hasInteractedWithCanvas }) {
+export function DoneButton({ save, disabled }) {
    const [isOpen, setIsOpen] = useState(false);
 
    let clear = () => {
@@ -19,7 +18,7 @@ export function DoneButton({ save, hasInteractedWithCanvas }) {
 
    return (
       <div>
-         <TooltipButton tooltip="Finished" onClick={() => setIsOpen(true)} disabled={!hasInteractedWithCanvas}>
+         <TooltipButton tooltip="Finished" onClick={() => setIsOpen(true)} disabled={disabled}>
             <FontAwesomeIcon icon={faSave} />
          </TooltipButton>
          <Dialog

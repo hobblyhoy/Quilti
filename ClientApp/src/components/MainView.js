@@ -247,9 +247,6 @@ export function MainView() {
       <div>
          <NavMenu>
             <NavItem>
-               {/* <NavLink href="#" className="text-dark" onClick={() => imageSizeAdjustClick(1)}>
-                  <FontAwesomeIcon icon={faPlus} />
-               </NavLink> */}
                <NavLink href="#" className="text-dark">
                   <TooltipButton tooltip="Zoom In" onClick={() => imageSizeAdjustClick(1)}>
                      <FontAwesomeIcon icon={faPlus} />

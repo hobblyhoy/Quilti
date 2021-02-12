@@ -7,9 +7,11 @@ export function TooltipButton({ tooltip, onClick, disabled, children, buttonStyl
          <button onClick={onClick} disabled={disabled} data-tip data-for={tooltip} style={buttonStyle}>
             {children}
          </button>
-         <ReactTooltip id={tooltip} place="bottom" type="dark" effect="solid" offset={{ bottom: 10 }}>
-            <span>{tooltip}</span>
-         </ReactTooltip>
+         {!disabled && (
+            <ReactTooltip id={tooltip} place="bottom" type="dark" effect="solid" offset={{ bottom: 10 }}>
+               <span>{tooltip}</span>
+            </ReactTooltip>
+         )}
       </>
    );
 }
