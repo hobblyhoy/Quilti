@@ -30,7 +30,7 @@ export function MainDraw() {
    const [drawMode, setDrawMode] = useState('Pencil');
    const [background, setBackground] = useState({ color: 'lightgray' });
    const [hasInteractedWithCanvas, setHasInteractedWithCanvas] = useState(false);
-   const [canvasState, setCanvasState] = useState(null);
+   const [canvasState, setCanvasState] = useState({});
    const [canvasStateHistory, setCanvasStateHistory] = useState([]);
 
    //// Init \\\\
@@ -95,7 +95,7 @@ export function MainDraw() {
             patchDecMissingFullImage.status = 'full';
             setFullGrid([...fullGrid]);
 
-            util_debugGrid(fullGrid);
+            //util_debugGrid(fullGrid);
          }
       })();
    }, [fullGrid]);
@@ -138,16 +138,11 @@ export function MainDraw() {
    };
 
    let undo = () => {
-      canvasStateHistory.pop(); //throw away the current state of the canvas
-      let previousState = canvasStateHistory.pop();
-      setCanvasState(previousState);
+      canvasStateHistory.pop();
+      let [previousState] = canvasStateHistory.slice(-1);
+      setCanvasStateHistory([...canvasStateHistory]);
+      setCanvasState({ state: previousState });
    };
-   useEffect(() => {
-      if (!canvasState) return;
-
-      let historyItemsToKeep = 1;
-      setCanvasStateHistory(canvasStateHistory => [...canvasStateHistory.slice(historyItemsToKeep * -1), canvasState]);
-   }, [canvasState]);
 
    //// Dynamic CSS styling / display aids \\\\
    let calculateFullGridClass = (column, row) => {
@@ -236,7 +231,7 @@ export function MainDraw() {
                                  size={patchSize}
                                  setHasInteractedWithCanvas={setHasInteractedWithCanvas}
                                  canvasState={canvasState}
-                                 setCanvasState={setCanvasState}
+                                 setCanvasStateHistory={setCanvasStateHistory}
                               />
                            ) : (
                               // The 8 surrounding patches
