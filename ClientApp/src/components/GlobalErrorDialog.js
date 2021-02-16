@@ -1,4 +1,4 @@
-import React, { Component, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Dialog from '@material-ui/core/Dialog';
 import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
@@ -18,7 +18,6 @@ export default function GlobalErrorDialog() {
    };
 
    useEffect(() => {
-      console.log('building global handler');
       window.QuiltiError = code => {
          setErrorCode(code);
       };
