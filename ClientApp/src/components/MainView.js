@@ -53,6 +53,15 @@ export function MainView() {
          }
 
          // Determine the suitable starting imageSize based on fitting a minimum of 2 rows/columns in users current screen
+         findImageSizeWithRetry(10);
+      })();
+   }, []);
+
+   // Stage 0-B
+   // If the page is opened in a new tab, we dont get accurate/valid size until the user actually hits the page
+   // So we do an exponential backoff of retries until we hit a valid screen size.
+   let findImageSizeWithRetry = backoff => {
+      try {
          let imageSizeTemp = 400;
          let gridColumns = 0;
          let gridRows = 0;
@@ -61,8 +70,12 @@ export function MainView() {
             ({ gridColumns, gridRows } = util_calculateAllowableGridRoom(buttonSize, imageSizeTemp, 100));
          }
          setImageSize(imageSizeTemp);
-      })();
-   }, []);
+      } catch {
+         console.warn(`unable to calc imageSize, retrying after ${backoff} ms`);
+         let nextBackoff = backoff * 2 < 5000 ? backoff * 2 : 5000;
+         setTimeout(() => findImageSizeWithRetry(nextBackoff), backoff);
+      }
+   };
 
    // Stage 1 - imageSize callback \\
    useEffect(() => {

@@ -155,10 +155,6 @@ export function MainDraw() {
       setCanvasState({ state: previousState });
    };
 
-   useEffect(() => {
-      console.log({ canvasStateHistory });
-   }, [canvasStateHistory]);
-
    let clear = () => {
       setBackground(background => ({ ...background }));
    };
