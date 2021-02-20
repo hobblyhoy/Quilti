@@ -177,11 +177,17 @@ namespace Quilti.Managers
             return patch.PatchId;
         }
 
-        public static async Task ClearOutOldReservedPatches(QuiltiContext context)
+        public static async Task ClearOutOldReservedPatches(QuiltiContext context, IMemoryCache cache)
         {
             var oneHourAgo = DateTimeOffset.Now.AddHours(-1);
-            context.Patches.RemoveRange(context.Patches.Where(p => p.ObjectStatus == ObjectStatus.Reserved && p.LastModifiedDate < oneHourAgo));
+            var patchesToClear = context.Patches.Where(p => p.ObjectStatus == ObjectStatus.Reserved && p.LastModifiedDate < oneHourAgo).ToList();
+            context.Patches.RemoveRange(patchesToClear);
             await context.SaveChangesAsync();
+
+            foreach (var patch in patchesToClear)
+            {
+                cache.Remove($"Patch_{patch.PatchId}");
+            }
         }
 
         public static bool PatchMatchesCreator(QuiltiContext context, IMemoryCache cache, string patchId, string creatorIp)

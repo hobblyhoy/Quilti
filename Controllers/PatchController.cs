@@ -46,7 +46,7 @@ namespace Quilti.Controllers
             if (CreatorManager.UserHasHitCreateCap(_context, _cache, creatorIp)) return StatusCode(403);
             if (PatchManager.PatchExists(_context, patchId)) return Conflict();
 
-            await PatchManager.ClearOutOldReservedPatches(_context);
+            await PatchManager.ClearOutOldReservedPatches(_context, _cache);
 
             return await PatchManager.ReservePatch(_context, creatorIp, patchId);
         }
@@ -58,6 +58,8 @@ namespace Quilti.Controllers
             if (!PatchManager.PatchExists(_context, requestDto.PatchId)) return NotFound();
             if (CreatorManager.UserHasHitCreateCap(_context, _cache, creatorIp)) return StatusCode(403);
             if (!PatchManager.PatchMatchesCreator(_context, _cache, requestDto.PatchId, creatorIp)) return StatusCode(403);
+
+            await PatchManager.ClearOutOldReservedPatches(_context, _cache);
 
             return await PatchManager.CompletePatch(_context, _cache, requestDto.PatchId, requestDto.ImageMini, requestDto.Image);
         }
