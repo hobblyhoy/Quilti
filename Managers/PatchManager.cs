@@ -1,5 +1,6 @@
 ﻿using Dapper;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Quilti.DAL;
@@ -7,6 +8,7 @@ using Quilti.Dtos;
 using Quilti.Models;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -113,6 +115,19 @@ namespace Quilti.Managers
             cache.Set(cacheKey, ringNumber, TimeSpan.FromDays(7));
 
             return returnPatch;
+        }
+
+        public static async Task DeletePatch(QuiltiContext context, IMemoryCache cache, string patchId)
+        {
+            var patchImage = context.PatchImages.FirstOrDefault(p => p.PatchId == patchId);
+            context.PatchImages.Remove(patchImage);
+
+            var patch = context.Patches.FirstOrDefault(p => p.PatchId == patchId);
+            context.Patches.Remove(patch);
+
+            await context.SaveChangesAsync();
+
+            cache.Remove($"Patch_{patch.PatchId}");
         }
 
         public static Patch GetPatch(QuiltiContext context, IMemoryCache cache, string patchId)

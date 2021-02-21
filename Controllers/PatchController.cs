@@ -63,5 +63,18 @@ namespace Quilti.Controllers
 
             return await PatchManager.CompletePatch(_context, _cache, requestDto.PatchId, requestDto.ImageMini, requestDto.Image);
         }
+
+        [HttpDelete("{patchId}/{creatorIp}")]
+        public async Task<ActionResult> Delete(string patchId, string creatorIp)
+        {
+            if (patchId == "0x0") return NotFound();
+            if (!PatchManager.PatchExists(_context, patchId)) return NotFound();
+            if (!PatchManager.PatchMatchesCreator(_context, _cache, patchId, creatorIp)) return StatusCode(403);
+
+            await PatchManager.DeletePatch(_context, _cache, patchId);
+
+            return Ok();
+        }
     }
 }
+

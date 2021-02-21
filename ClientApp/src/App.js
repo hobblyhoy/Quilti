@@ -3,6 +3,8 @@ import { Route } from 'react-router';
 import { Layout } from './components/Layout';
 import { MainView } from './components/MainView';
 import { MainDraw } from './components/MainDraw';
+import { MainAdmin } from './components/MainAdmin';
+
 import GlobalErrorDialog from './components/GlobalErrorDialog';
 import GeneralDialog from './components/GeneralDialog';
 
@@ -26,6 +28,7 @@ export default function App() {
          <Route exact path="/" component={MainView} />
          <Route path="/view/:patchIdParam" component={MainView} />
          <Route path="/draw/:patchIdParam" component={MainDraw} />
+         <Route path="/admin" component={MainAdmin} />
          <GlobalErrorDialog />
          <GeneralDialog />
       </Layout>
