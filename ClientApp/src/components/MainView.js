@@ -158,7 +158,7 @@ export function MainView() {
             patchDecMissingFullImage.status = 'full';
             setFullGrid([...fullGrid]);
 
-            util_debugGrid(fullGrid);
+            //util_debugGrid(fullGrid);
          }
       })();
    }, [fullGrid]);
