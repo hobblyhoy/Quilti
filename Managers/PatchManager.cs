@@ -97,7 +97,6 @@ namespace Quilti.Managers
                         var nextInList = currentRingPatches.FirstOrDefault(p => p.PatchId == patchId);
                         if (nextInList == null && haveEncounteredPatch)
                         {
-                            lastPatchFound = true;
                             break;
                         }
                         else if (nextInList != null)
@@ -107,6 +106,7 @@ namespace Quilti.Managers
                         }
                     }
 
+                    lastPatchFound = true;
                 }
             }
 
