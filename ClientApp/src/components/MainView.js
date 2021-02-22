@@ -124,7 +124,7 @@ export function MainView() {
 
          // Build the empty grid
          let grid = util_gridInitialize(columnCount, rowCount, fullGridCoordinates.leftX, fullGridCoordinates.topY);
-         util_debugGrid(grid);
+         //util_debugGrid(grid);
 
          // Finish waiting for the request to come back
          let patchIdsInRange = await patchIdsInRangeAwaited;
@@ -140,7 +140,7 @@ export function MainView() {
             })
          );
 
-         util_debugGrid(grid);
+         //util_debugGrid(grid);
          setFullGrid(grid);
       })();
    }, [fullGridCoordinates]);
@@ -156,7 +156,7 @@ export function MainView() {
             let image = await api_getPatchImage(patchDecMissingFullImage.patchId);
             patchDecMissingFullImage.src = image;
             patchDecMissingFullImage.status = 'full';
-            setFullGrid([...fullGrid]);
+            setFullGrid(fullGrid => [...fullGrid]);
 
             //util_debugGrid(fullGrid);
          }
@@ -179,6 +179,8 @@ export function MainView() {
    };
 
    let imageSizeAdjustClick = factor => {
+      if (isLoading) return;
+
       // Ensure we're not beyond our fixed min/max and that we have room for this size grid
       let newImageSize = factor > 0 ? imageSize * 2 : imageSize / 2;
       if (newImageSize < 50 || newImageSize > 800) return;
@@ -190,6 +192,8 @@ export function MainView() {
    };
 
    let moveGridClick = direction => {
+      if (isLoading) return;
+
       setFullGridCoordinates(coordinates => {
          switch (direction) {
             case 'up':
@@ -232,7 +236,7 @@ export function MainView() {
       let topY = centerPatchDec.y + Math.floor(gridRows / 2);
       let bottomY = topY - gridRows + 1;
       setFullGridCoordinates({ leftX, rightX, topY, bottomY });
-   }, 2000);
+   }, 1000);
    useEffect(() => {
       window.addEventListener('resize', resizeEventDebounced);
       return () => {
