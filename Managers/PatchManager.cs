@@ -134,7 +134,7 @@ namespace Quilti.Managers
         {
             var patch = cache.GetOrCreate($"Patch_{patchId}", entry =>
             {
-                entry.SlidingExpiration = TimeSpan.FromDays(1);
+                entry.SlidingExpiration = TimeSpan.FromHours(1);
                 return context.Patches.AsNoTracking().First(p => p.PatchId == patchId);
             });
             return patch;
