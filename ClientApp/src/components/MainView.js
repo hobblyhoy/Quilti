@@ -190,26 +190,27 @@ export function MainView() {
    };
 
    let moveGridClick = direction => {
-      let coordinates = { ...fullGridCoordinates };
-      switch (direction) {
-         case 'up':
-            coordinates.topY++;
-            coordinates.bottomY++;
-            break;
-         case 'down':
-            coordinates.topY--;
-            coordinates.bottomY--;
-            break;
-         case 'left':
-            coordinates.leftX--;
-            coordinates.rightX--;
-            break;
-         case 'right':
-            coordinates.leftX++;
-            coordinates.rightX++;
-            break;
-      }
-      setFullGridCoordinates(coordinates);
+      setFullGridCoordinates(coordinates => {
+         switch (direction) {
+            case 'up':
+               coordinates.topY++;
+               coordinates.bottomY++;
+               break;
+            case 'down':
+               coordinates.topY--;
+               coordinates.bottomY--;
+               break;
+            case 'left':
+               coordinates.leftX--;
+               coordinates.rightX--;
+               break;
+            case 'right':
+               coordinates.leftX++;
+               coordinates.rightX++;
+               break;
+         }
+         return { ...coordinates };
+      });
    };
 
    let resizeEventDebounced = debounce(() => {
@@ -231,7 +232,7 @@ export function MainView() {
       let topY = centerPatchDec.y + Math.floor(gridRows / 2);
       let bottomY = topY - gridRows + 1;
       setFullGridCoordinates({ leftX, rightX, topY, bottomY });
-   }, 500);
+   }, 2000);
    useEffect(() => {
       window.addEventListener('resize', resizeEventDebounced);
       return () => {
