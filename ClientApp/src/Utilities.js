@@ -150,3 +150,22 @@ export function util_extractReactState(setter) {
    });
    return valTemp;
 }
+
+// Interface with localstorage and track the date of their last visit, throttled at 24 hours.
+// Return true if it's been more than 24 hours otherwise false
+// We use this to determine if they should have their local DB cleared out.
+export function util_userVisitThrottled() {
+   let lastVisitThrottled = localStorage.getItem('lastVisitThrottled');
+   if (!lastVisitThrottled) {
+      localStorage.setItem('lastVisitThrottled', Date.now());
+      return false;
+   }
+
+   lastVisitThrottled = parseInt(lastVisitThrottled, 10);
+   let oneDay = 24 * 60 * 60 * 1000;
+   if (Date.now() - oneDay > lastVisitThrottled) {
+      localStorage.setItem('lastVisitThrottled', Date.now());
+      return true;
+   }
+   return false;
+}

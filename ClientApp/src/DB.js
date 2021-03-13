@@ -49,3 +49,19 @@ export async function db_patchImage_insertSafe(patchId, image) {
       db.add({ image, patchId }, patchId);
    }
 }
+
+export function db_deleteDatabase() {
+   return new Promise((resolve, reject) => {
+      var del = indexedDB.deleteDatabase(DBConfig.name);
+      del.onsuccess = () => {
+         console.log('DB deleted');
+         resolve();
+      };
+      del.onerror = () => {
+         console.warn('Failed to delete DB');
+         // Currently we're only doing this as a measure to keep using from seeing seldom deleted patches
+         // This is rare wont cause any issues if it fails so we dont call reject() here
+         resolve();
+      };
+   });
+}

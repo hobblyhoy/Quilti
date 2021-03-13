@@ -7,6 +7,7 @@ import {
    util_gridInitialize,
    util_gridFirstOrDefault,
    util_extractReactState,
+   util_userVisitThrottled,
 } from '../Utilities';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -18,7 +19,7 @@ import {
    faMinus,
    faSpinner,
 } from '@fortawesome/free-solid-svg-icons';
-import { db_init } from '../DB';
+import { db_deleteDatabase, db_init } from '../DB';
 import { NavMenu } from './NavMenu';
 import { NavItem, NavLink } from 'reactstrap';
 import { useParams, useHistory } from 'react-router-dom';
@@ -47,6 +48,8 @@ export function MainView() {
    useEffect(() => {
       (async () => {
          if (!dbIsInitialized) {
+            if (util_userVisitThrottled()) await db_deleteDatabase();
+
             db_init();
             // only needed because of HMR, if this is a prod build we can pull it out
             setDbIsInitialized(true);
@@ -320,6 +323,7 @@ export function MainView() {
                                     src={patch.src}
                                     style={{ width: imageSize + 'px', height: imageSize + 'px' }}
                                     onClick={() => patchClick(patch)}
+                                    data-meta={patch.patchId}
                                  />
                               ))}
                            </div>

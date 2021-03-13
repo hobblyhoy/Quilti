@@ -24,12 +24,8 @@ export function MainAdmin() {
       setPatchImage(null);
    }, [patchId]);
 
-   let banUser = async () => {
-      console.error('TODO');
-   };
-
-   let removeImage = async () => {
-      let resp = await axios.delete('/api/Patch/' + patchId + '/' + creatorIp);
+   let removeImage = async banUser => {
+      let resp = await axios.delete('/api/Patch/' + patchId + '/' + creatorIp + '/' + banUser);
       console.log({ resp });
       setReqStatus(resp.status);
    };
@@ -49,13 +45,13 @@ export function MainAdmin() {
             {patchImage && <img src={patchImage} width="100" height="100" />}
          </div>
          <div style={fieldMargin}>
-            <button onClick={banUser} disabled={!patchImage}>
-               Ban User
+            <button onClick={() => removeImage(false)} disabled={!patchImage}>
+               Remove Image
             </button>
          </div>
          <div style={fieldMargin}>
-            <button onClick={removeImage} disabled={!patchImage}>
-               Remove Image
+            <button onClick={() => removeImage(true)} disabled={!patchImage}>
+               Remove Image and Ban User
             </button>
          </div>
          <div style={fieldMargin}>{reqStatus}</div>
